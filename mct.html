@@ -1,0 +1,4283 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Math Chiptune Tracker / MCT</title>
+  <style>
+    :root {
+      --bg: #0f1219;
+      --panel: #171b25;
+      --panel2: #202636;
+      --panel3: #111722;
+      --text: #eef3ff;
+      --muted: #9aa8c7;
+      --line: #2e364b;
+      --accent: #7cf7c2;
+      --accent2: #80a7ff;
+      --warn: #ffd166;
+      --danger: #ff6b8a;
+      --hot: #ff9f43;
+      --purple: #c49bff;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 8% 0%, rgba(124,247,194,0.13), transparent 34%),
+        radial-gradient(circle at 78% 12%, rgba(128,167,255,0.16), transparent 38%),
+        radial-gradient(circle at 70% 85%, rgba(255,159,67,0.08), transparent 36%),
+        var(--bg);
+    }
+
+    .wrap {
+      width: min(1240px, calc(100% - 28px));
+      margin: 0 auto;
+      padding: 28px 0 130px;
+    }
+
+    header {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 16px;
+      align-items: center;
+      margin-bottom: 18px;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: clamp(28px, 4vw, 46px);
+      letter-spacing: -0.045em;
+    }
+
+    .sub {
+      color: var(--muted);
+      line-height: 1.5;
+      margin: 0;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,0.045);
+      color: var(--accent);
+      border-radius: 999px;
+      padding: 9px 13px;
+      font-size: 13px;
+      white-space: nowrap;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 370px 1fr;
+      gap: 16px;
+    }
+
+    .card {
+      background: rgba(23,27,37,0.88);
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      box-shadow: 0 16px 50px rgba(0,0,0,0.24);
+      overflow: hidden;
+    }
+
+    .card h2 {
+      margin: 0;
+      padding: 16px 18px;
+      font-size: 16px;
+      background: rgba(255,255,255,0.035);
+      border-bottom: 1px solid var(--line);
+    }
+
+    .body { padding: 16px 18px 18px; }
+
+    label {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      margin-bottom: 7px;
+    }
+
+    input, select, textarea {
+      width: 100%;
+      background: var(--panel2);
+      color: var(--text);
+      border: 1px solid var(--line);
+      border-radius: 13px;
+      padding: 11px 12px;
+      outline: none;
+      font: inherit;
+    }
+
+    input:focus, select:focus, textarea:focus {
+      border-color: rgba(124,247,194,0.72);
+      box-shadow: 0 0 0 3px rgba(124,247,194,0.08);
+    }
+
+    input[type="range"] { padding: 0; }
+
+    textarea {
+      min-height: 130px;
+      resize: vertical;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .row.one { grid-template-columns: 1fr; }
+    .row.three { grid-template-columns: 1fr 1fr 1fr; }
+    .row.four { grid-template-columns: repeat(4, 1fr); }
+
+    body.basic-ui .advanced-only { display: none !important; }
+    body.basic-ui .grid { grid-template-columns: 340px 1fr; }
+    body.studio-ui .basic-tip { display: none; }
+
+    .ux-switch {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      padding: 10px;
+      border: 1px solid rgba(124,247,194,0.16);
+      background: linear-gradient(135deg, rgba(124,247,194,0.07), rgba(128,167,255,0.06));
+      border-radius: 18px;
+      margin-bottom: 12px;
+    }
+
+    .workflow-tabs {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 8px;
+      margin-bottom: 12px;
+      padding: 9px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.035);
+      border-radius: 18px;
+    }
+
+    .workflow-tab {
+      color: var(--muted);
+      background: rgba(255,255,255,0.035);
+      border: 1px solid var(--line);
+      border-radius: 13px;
+      padding: 9px 7px;
+      font-size: 11px;
+    }
+
+    .workflow-tab.active {
+      color: #07100d;
+      background: var(--accent);
+      border-color: transparent;
+    }
+
+    .basic-quick {
+      display: none;
+      padding: 12px;
+      border: 1px solid rgba(124,247,194,0.18);
+      background: rgba(124,247,194,0.055);
+      border-radius: 18px;
+      margin-bottom: 12px;
+    }
+
+    .basic-quick h3 {
+      margin: 0 0 10px;
+      font-size: 14px;
+    }
+
+    .basic-quick-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .basic-quick-grid button {
+      padding: 10px 9px;
+      font-size: 12px;
+      border-radius: 12px;
+    }
+
+    body.basic-ui .basic-quick { display: block; }
+    body.basic-ui .core-optional { display: none !important; }
+    body.basic-ui .score-panel { display: none; }
+    body.basic-ui .pillbox .advanced-pill { display: none; }
+
+    body.stage-find .stage-keep,
+    body.stage-find .stage-fix,
+    body.stage-find .stage-compare,
+    body.stage-find .stage-finish,
+    body.stage-keep .stage-find,
+    body.stage-keep .stage-fix,
+    body.stage-keep .stage-compare,
+    body.stage-keep .stage-finish,
+    body.stage-fix .stage-find,
+    body.stage-fix .stage-keep,
+    body.stage-fix .stage-compare,
+    body.stage-fix .stage-finish,
+    body.stage-compare .stage-find,
+    body.stage-compare .stage-keep,
+    body.stage-compare .stage-fix,
+    body.stage-compare .stage-finish,
+    body.stage-finish .stage-find,
+    body.stage-finish .stage-keep,
+    body.stage-finish .stage-fix,
+    body.stage-finish .stage-compare {
+      display: none;
+    }
+
+    body.stage-all .stage-find,
+    body.stage-all .stage-keep,
+    body.stage-all .stage-fix,
+    body.stage-all .stage-compare,
+    body.stage-all .stage-finish {
+      /* All 단계에서는 각 요소의 원래 display 값을 유지합니다. */
+    }
+
+    .studio-strip {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(130px, 1fr));
+      gap: 10px;
+      padding: 14px 14px 0;
+    }
+
+    .studio-knob {
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,0.035);
+      border-radius: 16px;
+      padding: 10px;
+    }
+
+    .studio-knob b {
+      display: block;
+      font-size: 11px;
+      color: var(--muted);
+      margin-bottom: 8px;
+      letter-spacing: 0.04em;
+    }
+
+    .cell .meta {
+      position: absolute;
+      right: 5px;
+      bottom: 3px;
+      font-size: 9px;
+      color: rgba(238,243,255,0.55);
+    }
+
+    .cell.tie {
+      border-style: dashed;
+      color: var(--accent2);
+      background: rgba(128,167,255,0.07);
+    }
+
+    .cell.velocity-low { opacity: 0.72; }
+    .cell.velocity-high { box-shadow: inset 0 0 0 1px rgba(255,209,102,0.2); }
+
+    button {
+      appearance: none;
+      border: 0;
+      color: #07100d;
+      background: var(--accent);
+      border-radius: 14px;
+      padding: 12px 14px;
+      font-weight: 850;
+      cursor: pointer;
+      transition: transform 0.12s ease, filter 0.12s ease, opacity 0.12s ease;
+    }
+
+    button:hover { transform: translateY(-1px); filter: brightness(1.04); }
+    button:active { transform: translateY(0); }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    button.secondary {
+      color: var(--text);
+      background: var(--panel2);
+      border: 1px solid var(--line);
+    }
+
+    button.warn { background: var(--warn); }
+    button.danger { background: var(--danger); color: white; }
+    button.purple { background: var(--purple); }
+    button.hot { background: var(--hot); }
+
+    .actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .actions.three { grid-template-columns: 1fr 1fr 1fr; }
+
+    .history-row {
+      position: fixed;
+      left: 50%;
+      bottom: 16px;
+      transform: translateX(-50%);
+      z-index: 10000;
+      width: min(760px, calc(100% - 24px));
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 10px;
+      padding: 10px;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(17, 23, 34, 0.92);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-radius: 22px;
+      box-shadow: 0 18px 60px rgba(0,0,0,0.38);
+    }
+
+    .history-row button {
+      padding: 11px 12px;
+      border-radius: 14px;
+    }
+
+    .history-info {
+      grid-column: 1 / -1;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.45;
+      padding: 2px 4px 0;
+    }
+
+    .point-panel {
+      margin-top: 12px;
+      padding: 12px;
+      border: 1px solid rgba(255,209,102,0.2);
+      background: rgba(255,209,102,0.055);
+      border-radius: 18px;
+    }
+
+    .lock-panel {
+      margin-top: 12px;
+      padding: 12px;
+      border: 1px solid rgba(128,167,255,0.22);
+      background: rgba(128,167,255,0.065);
+      border-radius: 18px;
+    }
+
+    .lock-panel h3 {
+      margin: 0 0 10px;
+      font-size: 13px;
+      color: var(--text);
+    }
+
+    .lock-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .lock-tile {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 42px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,0.04);
+      border-radius: 14px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 850;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .lock-tile.locked {
+      color: #07100d;
+      background: var(--accent2);
+      border-color: transparent;
+    }
+
+    .fix-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .fix-actions button {
+      padding: 10px 9px;
+      font-size: 12px;
+      border-radius: 12px;
+    }
+
+    .lock-info {
+      margin-top: 9px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .locked-chip {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin-left: 6px;
+      padding: 2px 5px;
+      border-radius: 999px;
+      background: rgba(128,167,255,0.18);
+      color: var(--accent2);
+      font-size: 9px;
+      font-weight: 900;
+      vertical-align: middle;
+    }
+
+    .point-panel h3 {
+      margin: 0 0 10px;
+      font-size: 13px;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .point-badge {
+      font-size: 11px;
+      color: #07100d;
+      background: var(--warn);
+      border-radius: 999px;
+      padding: 5px 8px;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+
+    .point-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .point-actions button {
+      padding: 10px 9px;
+      font-size: 12px;
+      border-radius: 12px;
+    }
+
+    .point-info {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.45;
+      margin-top: 9px;
+    }
+
+    .status {
+      margin-top: 12px;
+      padding: 10px 12px;
+      border-radius: 14px;
+      background: rgba(128,167,255,0.08);
+      border: 1px solid rgba(128,167,255,0.18);
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .tracker {
+      padding: 14px;
+      overflow: auto;
+    }
+
+    .channels {
+      display: grid;
+      gap: 10px;
+      min-width: 840px;
+    }
+
+    .channel {
+      display: grid;
+      grid-template-columns: 86px repeat(16, minmax(40px, 1fr));
+      gap: 6px;
+      align-items: center;
+    }
+
+    .steps {
+      display: grid;
+      grid-template-columns: 86px repeat(16, minmax(40px, 1fr));
+      gap: 6px;
+      align-items: center;
+      margin-bottom: 8px;
+      min-width: 840px;
+    }
+
+    .step-label, .ch-name {
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 850;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .step-num {
+      color: rgba(238,243,255,0.52);
+      text-align: center;
+      font-size: 11px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+
+    .cell {
+      min-height: 38px;
+      border-radius: 10px;
+      background: rgba(255,255,255,0.035);
+      border: 1px solid var(--line);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 12px;
+      color: var(--muted);
+      position: relative;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .cell:hover {
+      border-color: rgba(124,247,194,0.55);
+      background: rgba(124,247,194,0.07);
+    }
+
+    .cell.note {
+      color: var(--text);
+      border-color: rgba(124,247,194,0.32);
+      background: rgba(124,247,194,0.08);
+    }
+
+    .cell.drum {
+      color: var(--text);
+      border-color: rgba(255,209,102,0.35);
+      background: rgba(255,209,102,0.08);
+    }
+
+    .cell.playing {
+      outline: 2px solid var(--accent);
+      box-shadow: 0 0 22px rgba(124,247,194,0.24);
+    }
+
+    .cell.selected {
+      outline: 2px solid var(--warn);
+      box-shadow: 0 0 24px rgba(255,209,102,0.2);
+    }
+
+    .step-num.selected {
+      color: var(--warn);
+      font-weight: 900;
+    }
+
+    .cell.barline::before {
+      content: "";
+      position: absolute;
+      left: -5px;
+      top: 4px;
+      bottom: 4px;
+      width: 1px;
+      background: rgba(255,255,255,0.18);
+    }
+
+    .songbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      padding: 14px 14px 0;
+    }
+
+    .pat {
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,0.04);
+      color: var(--muted);
+      border-radius: 999px;
+      padding: 8px 10px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    .pat.active {
+      color: #07100d;
+      background: var(--accent2);
+      border-color: transparent;
+      font-weight: 850;
+    }
+
+    .meters {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      padding: 14px 14px 0;
+    }
+
+    .meter {
+      background: rgba(255,255,255,0.035);
+      border: 1px solid var(--line);
+      border-radius: 15px;
+      padding: 10px;
+    }
+
+    .meter span {
+      display: block;
+      color: var(--muted);
+      font-size: 11px;
+      margin-bottom: 7px;
+    }
+
+    .bar {
+      height: 8px;
+      background: var(--panel2);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .bar i {
+      display: block;
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      border-radius: inherit;
+      transition: width 0.08s linear;
+    }
+
+    .hint {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.55;
+      margin-top: 12px;
+    }
+
+    .mini {
+      display: inline-block;
+      color: var(--accent);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+
+    .tabs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .pillbox {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+      margin-top: 10px;
+    }
+
+    .pill {
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,0.04);
+      color: var(--muted);
+      border-radius: 999px;
+      padding: 7px 9px;
+      font-size: 12px;
+    }
+
+    .score-panel {
+      margin-top: 12px;
+      border: 1px solid rgba(124,247,194,0.18);
+      background: rgba(124,247,194,0.055);
+      border-radius: 18px;
+      padding: 12px;
+    }
+
+    .score-head {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .score-head b {
+      font-size: 13px;
+      color: var(--text);
+    }
+
+    .score-total {
+      color: #07100d;
+      background: var(--accent);
+      border-radius: 999px;
+      padding: 6px 9px;
+      font-size: 12px;
+      font-weight: 900;
+    }
+
+    .score-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .score-mini {
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,0.04);
+      border-radius: 14px;
+      padding: 8px;
+    }
+
+    .score-mini span {
+      display: block;
+      color: var(--muted);
+      font-size: 10px;
+      margin-bottom: 5px;
+    }
+
+    .score-mini i {
+      display: block;
+      font-style: normal;
+      color: var(--text);
+      font-weight: 850;
+      font-size: 14px;
+    }
+
+    .take-list {
+      display: grid;
+      gap: 8px;
+    }
+
+    .take-item {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: 8px;
+      align-items: center;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,0.04);
+      border-radius: 15px;
+      padding: 8px;
+    }
+
+    .take-rank {
+      width: 28px;
+      height: 28px;
+      border-radius: 10px;
+      background: var(--panel2);
+      color: var(--accent);
+      display: grid;
+      place-items: center;
+      font-weight: 900;
+      font-size: 12px;
+    }
+
+    .take-desc strong {
+      display: block;
+      font-size: 12px;
+      color: var(--text);
+      margin-bottom: 3px;
+    }
+
+    .take-desc span {
+      display: block;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.35;
+    }
+
+    .take-item button {
+      padding: 8px 10px;
+      border-radius: 11px;
+      font-size: 12px;
+    }
+
+    .review-card {
+      border: 1px solid rgba(196,155,255,0.22);
+      background: rgba(196,155,255,0.07);
+      border-radius: 16px;
+      padding: 11px;
+      margin: 10px 0;
+    }
+
+    .review-title {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .review-title b {
+      font-size: 13px;
+      color: var(--text);
+    }
+
+    .review-badge {
+      color: #07100d;
+      background: var(--purple);
+      border-radius: 999px;
+      padding: 5px 8px;
+      font-size: 11px;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+
+    .review-summary {
+      color: var(--text);
+      font-size: 12px;
+      line-height: 1.48;
+      margin-bottom: 9px;
+    }
+
+    .review-columns {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .review-box {
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,0.04);
+      border-radius: 13px;
+      padding: 8px;
+    }
+
+    .review-box span {
+      display: block;
+      color: var(--muted);
+      font-size: 10px;
+      margin-bottom: 5px;
+      letter-spacing: 0.04em;
+    }
+
+    .review-box ul {
+      margin: 0;
+      padding-left: 16px;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.45;
+    }
+
+    .review-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 8px;
+    }
+
+    .review-actions button {
+      padding: 9px 8px;
+      border-radius: 12px;
+      font-size: 12px;
+    }
+
+    .compare-panel, .favorite-panel {
+      border: 1px solid rgba(128,167,255,0.2);
+      background: rgba(128,167,255,0.055);
+      border-radius: 16px;
+      padding: 11px;
+      margin: 10px 0;
+    }
+
+    .compare-title, .favorite-title {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 9px;
+    }
+
+    .compare-title b, .favorite-title b {
+      font-size: 13px;
+      color: var(--text);
+    }
+
+    .compare-title span, .favorite-title span {
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .compare-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .compare-slot {
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,0.04);
+      border-radius: 14px;
+      padding: 9px;
+    }
+
+    .compare-slot strong {
+      display: block;
+      font-size: 12px;
+      margin-bottom: 5px;
+      color: var(--text);
+    }
+
+    .compare-slot span {
+      display: block;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.35;
+      min-height: 30px;
+    }
+
+    .compare-actions, .favorite-actions {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .compare-actions button, .favorite-actions button, .fav-item button {
+      padding: 8px 8px;
+      border-radius: 11px;
+      font-size: 12px;
+    }
+
+    .compare-info {
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.42;
+      margin-top: 8px;
+    }
+
+    .fav-list {
+      display: grid;
+      gap: 8px;
+      max-height: 270px;
+      overflow: auto;
+      padding-right: 2px;
+    }
+
+    .fav-item {
+      display: grid;
+      grid-template-columns: 1fr auto auto auto;
+      gap: 7px;
+      align-items: center;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,0.04);
+      border-radius: 14px;
+      padding: 8px;
+    }
+
+    .fav-item strong {
+      display: block;
+      color: var(--text);
+      font-size: 12px;
+      margin-bottom: 3px;
+    }
+
+    .fav-item span {
+      display: block;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.35;
+    }
+
+    .timeline {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(76px, 1fr));
+      gap: 8px;
+      padding: 14px 14px 0;
+    }
+
+    .timeline-seg {
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,0.04);
+      border-radius: 14px;
+      padding: 8px;
+      cursor: pointer;
+      min-height: 76px;
+      display: grid;
+      align-content: end;
+      gap: 6px;
+    }
+
+    .timeline-seg.active {
+      border-color: transparent;
+      background: linear-gradient(135deg, rgba(124,247,194,0.22), rgba(128,167,255,0.20));
+    }
+
+    .timeline-seg strong {
+      color: var(--text);
+      font-size: 11px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .timeline-seg span {
+      color: var(--muted);
+      font-size: 10px;
+    }
+
+    .energy-bar {
+      height: 30px;
+      display: flex;
+      align-items: end;
+    }
+
+    .energy-bar i {
+      display: block;
+      width: 100%;
+      min-height: 4px;
+      border-radius: 8px 8px 3px 3px;
+      background: linear-gradient(180deg, var(--accent), var(--accent2));
+    }
+
+    .director-panel {
+      margin-top: 12px;
+      padding: 12px;
+      border: 1px solid rgba(124,247,194,0.2);
+      background: rgba(124,247,194,0.055);
+      border-radius: 18px;
+    }
+
+    .director-panel h3 {
+      margin: 0 0 10px;
+      font-size: 13px;
+      color: var(--text);
+    }
+
+    .director-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .director-grid button {
+      padding: 10px 9px;
+      font-size: 12px;
+      border-radius: 12px;
+    }
+
+    .mp3-report {
+      margin-top: 12px;
+      padding: 12px;
+      border: 1px solid rgba(255,209,102,0.18);
+      background: rgba(255,209,102,0.055);
+      border-radius: 16px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .mp3-report b { color: var(--text); }
+
+    .mp3-report-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .mp3-report-grid div {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 8px;
+      background: rgba(255,255,255,0.04);
+    }
+
+    .mp3-report-grid span {
+      display: block;
+      color: var(--text);
+      font-size: 14px;
+      font-weight: 900;
+      margin-top: 3px;
+    }
+
+    .mp3-followups {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .mp3-followups button {
+      padding: 9px 8px;
+      border-radius: 12px;
+      font-size: 12px;
+    }
+
+    .finish-note {
+      margin-top: 10px;
+      padding: 10px 12px;
+      border: 1px solid rgba(124,247,194,0.14);
+      background: rgba(124,247,194,0.045);
+      border-radius: 14px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .file-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      align-items: center;
+    }
+
+    input[type="file"] {
+      padding: 9px;
+      font-size: 12px;
+    }
+
+    @media (max-width: 980px) {
+      header, .grid { grid-template-columns: 1fr; }
+      .badge { justify-content: center; }
+      .row.three, .row.four { grid-template-columns: 1fr; }
+      .history-row { bottom: 10px; grid-template-columns: 1fr 1fr 1fr; }
+      .history-info { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div>
+        <h1>Math Chiptune Tracker / MCT</h1>
+        <p class="sub">MCT는 수학 규칙과 트래커 편집으로 8비트 루프를 만들고, 좋은 부분을 잠그고, 약한 부분만 고쳐서, .mct 또는 단일 HTML 배경음악으로 내보내는 브라우저 기반 작곡 도구입니다.</p>
+      </div>
+      <div class="badge">Public Beta · Web Audio · 자체 MCT 포맷</div>
+    </header>
+
+    <div class="grid">
+      <section class="card">
+        <h2>생성 설정</h2>
+        <div class="body">
+          <div class="workflow-tabs advanced-only" id="workflowTabs">
+            <button class="workflow-tab active" data-stage="all">All</button>
+            <button class="workflow-tab" data-stage="find">Find</button>
+            <button class="workflow-tab" data-stage="keep">Keep</button>
+            <button class="workflow-tab" data-stage="fix">Fix</button>
+            <button class="workflow-tab" data-stage="compare">Compare</button>
+            <button class="workflow-tab" data-stage="finish">Finish</button>
+          </div>
+
+          <div class="basic-quick">
+            <h3>빠른 작곡 흐름</h3>
+            <div class="basic-quick-grid">
+              <button id="basicFind" class="hot">좋은 루프 찾기</button>
+              <button id="basicPlay" class="warn">재생 / 확인</button>
+              <button id="basicFavorite" class="purple">★ 마음에 들어요</button>
+              <button id="basicFix" class="secondary">아쉬운 부분 고치기</button>
+              <button id="basicCute" class="secondary">더 귀엽게</button>
+              <button id="basicExport" class="secondary">완성본 만들기</button>
+            </div>
+          </div>
+          <div class="ux-switch">
+            <div>
+              <label for="uiMode">UI 모드</label>
+              <select id="uiMode">
+                <option value="basic">기본 UI · 빠른 생성</option>
+                <option value="studio" selected>혁신 UI · 작곡 스튜디오</option>
+              </select>
+            </div>
+            <div>
+              <label for="editMode">그리드 편집 모드</label>
+              <select id="editMode">
+                <option value="select">안전 선택 모드</option>
+                <option value="pitch">음정 편집</option>
+                <option value="length">길이 편집</option>
+                <option value="velocity">세기 편집</option>
+                <option value="tie">타이 편집</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="row one stage-find">
+            <div>
+              <label for="mood">무드 프리셋</label>
+              <select id="mood">
+                <option value="cute">귀여운 게임 BGM</option>
+                <option value="tension">긴장감</option>
+                <option value="space">우주</option>
+                <option value="volcano">화산</option>
+                <option value="lab">실험실</option>
+                <option value="happy">행복</option>
+                <option value="sad">슬픔</option>
+                <option value="anger">노여움</option>
+                <option value="running">달리기</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="row core-optional stage-find advanced-only">
+            <div>
+              <label for="seed">Seed</label>
+              <input id="seed" value="MCT-8BIT-001" />
+            </div>
+            <div>
+              <label for="bpm">BPM</label>
+              <input id="bpm" type="number" min="55" max="220" value="136" />
+            </div>
+          </div>
+
+          <div class="row core-optional stage-find advanced-only">
+            <div>
+              <label for="root">Root</label>
+              <select id="root">
+                <option>C</option><option>C#</option><option>D</option><option>D#</option><option>E</option><option>F</option>
+                <option>F#</option><option>G</option><option>G#</option><option>A</option><option>A#</option><option>B</option>
+              </select>
+            </div>
+            <div>
+              <label for="scale">Scale</label>
+              <select id="scale">
+                <option value="minorPent">Minor Pentatonic</option>
+                <option value="majorPent">Major Pentatonic</option>
+                <option value="naturalMinor">Natural Minor</option>
+                <option value="major">Major</option>
+                <option value="dorian">Dorian</option>
+                <option value="phrygian">Phrygian</option>
+                <option value="chromaticLite">Chromatic Lite</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="row advanced-only">
+            <div>
+              <label for="formula">수학 규칙</label>
+              <select id="formula">
+                <option value="randomWalk">랜덤 워크 멜로디</option>
+                <option value="sine">사인파 높낮이</option>
+                <option value="euclid">유클리드 리듬</option>
+                <option value="cellular">셀룰러 오토마타</option>
+              </select>
+            </div>
+            <div>
+              <label for="drumPattern">드럼 패턴</label>
+              <select id="drumPattern">
+                <option value="basic">Basic K/S/H</option>
+                <option value="cute">Cute Bounce</option>
+                <option value="drive">Drive</option>
+                <option value="breakbeat">Breakbeat</option>
+                <option value="tribal">Volcano Tribal</option>
+                <option value="sparse">Sparse</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="row one advanced-only">
+            <div>
+              <label for="chordProgression">코드 진행</label>
+              <select id="chordProgression">
+                <option value="pop">I–V–vi–IV / 밝고 익숙함</option>
+                <option value="classic">I–vi–IV–V / 귀여운 게임</option>
+                <option value="minorLoop">i–VI–III–VII / 서사적</option>
+                <option value="dark">i–♭II–v–i / 긴장감</option>
+                <option value="space">i–IV–♭VII–III / 우주감</option>
+                <option value="drive">i–i–♭VII–VI / 질주감</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="row advanced-only">
+            <div>
+              <label for="songStructure">곡 구조 / Build-up</label>
+              <select id="songStructure">
+                <option value="aaba">A-A′-B-A / 기본 루프</option>
+                <option value="build8">Intro-A-A′-Build-B-Peak-Resolve-A</option>
+                <option value="wave8">Low-Mid-High-Mid 반복 파동</option>
+                <option value="run8">Run-Up-Sprint-Break-Finish</option>
+                <option value="story12">Intro-A-A′-B-Build-Peak-Break-A′-Peak-Resolve-A-Outro</option>
+              </select>
+            </div>
+            <div>
+              <label for="motifMode">모티프 기반 생성</label>
+              <select id="motifMode">
+                <option value="strong">강하게: 주제 선율 반복/변형</option>
+                <option value="balanced">균형: 모티프 + 랜덤 보조</option>
+                <option value="loose">느슨하게: 분위기만 유지</option>
+                <option value="off">끄기: 기존 랜덤 방식</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="row advanced-only">
+            <div>
+              <label for="density">멜로디 밀도</label>
+              <input id="density" type="range" min="15" max="98" value="62" />
+            </div>
+            <div>
+              <label for="variation">변주 강도</label>
+              <input id="variation" type="range" min="0" max="100" value="48" />
+            </div>
+          </div>
+
+          <div class="actions stage-find">
+            <button id="applyMood" class="purple">무드 적용</button>
+            <button id="generate">새 곡 생성</button>
+          </div>
+          <div class="history-row">
+            <button id="undoBtn" class="secondary">↶ Undo</button>
+            <button id="redoBtn" class="secondary">↷ Redo</button>
+            <button id="saveCheckpoint" class="secondary">★ Checkpoint</button>
+            <div class="history-info" id="historyInfo">Undo / Redo / Checkpoint는 하단에 고정되어 실시간 작업 중에도 바로 사용할 수 있습니다.</div>
+          </div>
+          <div class="actions three stage-find">
+            <button id="play" class="warn">재생</button>
+            <button id="stop" class="danger">정지</button>
+            <button id="randomSeed" class="secondary">시드 랜덤</button>
+          </div>
+          <div class="actions advanced-only stage-find">
+            <button id="generateTakes" class="hot">20 Takes 생성 · Best 3</button>
+            <button id="scoreCurrent" class="secondary">현재 곡 점수 평가</button>
+          </div>
+          <div class="row advanced-only">
+            <div>
+              <label for="lengthPreset">음표 길이 / 쉼표감</label>
+              <select id="lengthPreset">
+                <option value="mixed" selected>Mixed · 자연스러운 길이</option>
+                <option value="staccato">Staccato · 짧고 통통</option>
+                <option value="normal">Normal · 기본 16비트</option>
+                <option value="legato">Legato · 긴 음과 타이</option>
+                <option value="dramatic">Dramatic · 길고 짧음 대비</option>
+              </select>
+            </div>
+            <div>
+              <label for="velocityPreset">벨로시티 / 악센트</label>
+              <select id="velocityPreset">
+                <option value="human" selected>Human · 약간의 사람 느낌</option>
+                <option value="flat">Flat · 균일</option>
+                <option value="groove">Groove · 강약 리듬</option>
+                <option value="accent">Accent · 강박 강조</option>
+                <option value="chaos">Chaos · 불규칙 강조</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="row four advanced-only">
+            <div>
+              <label for="leadInstrument">Lead 음색</label>
+              <select id="leadInstrument">
+                <option value="softSquare">Soft Square</option>
+                <option value="brightSquare">Bright Square</option>
+                <option value="pulseLead">Pulse Lead</option>
+                <option value="tinyBell">Tiny Bell</option>
+                <option value="laserLead">Laser Lead</option>
+              </select>
+            </div>
+            <div>
+              <label for="bassInstrument">Bass 음색</label>
+              <select id="bassInstrument">
+                <option value="triangleBass">Triangle Bass</option>
+                <option value="squareBass">Square Bass</option>
+                <option value="pluckBass">Pluck Bass</option>
+                <option value="subBass">Sub Bass</option>
+              </select>
+            </div>
+            <div>
+              <label for="arpInstrument">Arp 음색</label>
+              <select id="arpInstrument">
+                <option value="thinArp">Thin Arp</option>
+                <option value="sparkleArp">Sparkle Arp</option>
+                <option value="bellArp">Bell Arp</option>
+              </select>
+            </div>
+            <div>
+              <label for="drumKit">Drum Kit</label>
+              <select id="drumKit">
+                <option value="classic">Classic Kit</option>
+                <option value="cute">Cute Kit</option>
+                <option value="hard">Hard Kit</option>
+                <option value="noise">Noise Kit</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="row advanced-only">
+            <div>
+              <label for="swing">Swing</label>
+              <input id="swing" type="range" min="0" max="40" value="8" />
+            </div>
+            <div>
+              <label for="humanize">Humanize</label>
+              <input id="humanize" type="range" min="0" max="40" value="6" />
+            </div>
+          </div>
+
+          <div class="actions advanced-only">
+            <button id="append" class="secondary">패턴 추가</button>
+            <button id="duplicate" class="secondary">현재 패턴 복제</button>
+          </div>
+
+          <div class="lock-panel advanced-only stage-keep">
+            <h3>Keep & Fix · 좋은 부분 잠그고 나쁜 부분만 고치기</h3>
+            <div class="lock-grid">
+              <div class="lock-tile" id="lockLead" data-lock="lead">Lead</div>
+              <div class="lock-tile" id="lockBass" data-lock="bass">Bass</div>
+              <div class="lock-tile" id="lockArp" data-lock="arp">Arp</div>
+              <div class="lock-tile" id="lockDrum" data-lock="drum">Drum</div>
+            </div>
+            <div class="row" style="margin-bottom:0;">
+              <div>
+                <label for="fixScope">수정 범위</label>
+                <select id="fixScope">
+                  <option value="current">현재 패턴만</option>
+                  <option value="all">전체 곡</option>
+                </select>
+              </div>
+              <div>
+                <label for="fixTarget">수정 대상</label>
+                <select id="fixTarget">
+                  <option value="unlocked">잠기지 않은 채널</option>
+                  <option value="lead">Lead만</option>
+                  <option value="bass">Bass만</option>
+                  <option value="arp">Arp만</option>
+                  <option value="drum">Drum만</option>
+                </select>
+              </div>
+            </div>
+            <div class="fix-actions">
+              <button id="rerollUnlocked" class="hot">선택 구간 다시 생성</button>
+              <button id="fixWeakest" class="secondary">가장 약한 부분 자동 보정</button>
+              <button id="lockMelodyPreset" class="secondary">멜로디 보존 모드</button>
+              <button id="unlockAll" class="secondary">전체 잠금 해제</button>
+            </div>
+            <div class="lock-info" id="lockInfo">마음에 드는 채널을 잠그면 다시 생성해도 보존됩니다. 예: Lead 잠금 → Drum/Bass만 새로 뽑기.</div>
+          </div>
+
+          <div class="director-panel advanced-only stage-fix">
+            <h3>Director Buttons · 말로 지시하듯 다듬기</h3>
+            <div class="director-grid">
+              <button id="dirCute" class="secondary">더 귀엽게</button>
+              <button id="dirLessNoisy" class="secondary">덜 시끄럽게</button>
+              <button id="dirMelody" class="secondary">멜로디 강화</button>
+              <button id="dirDrumsDown" class="secondary">드럼 줄이기</button>
+              <button id="dirBuild" class="hot">후반부 더 고조</button>
+              <button id="dirSmoothLoop" class="secondary">루프 더 자연스럽게</button>
+            </div>
+          </div>
+
+          <div class="point-panel advanced-only stage-fix">
+            <h3>Point Control <span class="point-badge" id="pointBadge">P01 · Step 01</span></h3>
+            <div class="row one" style="margin-bottom:0;">
+              <div>
+                <label for="pointTarget">대상 채널</label>
+                <select id="pointTarget">
+                  <option value="all">전체 채널</option>
+                  <option value="lead">Lead</option>
+                  <option value="bass">Bass</option>
+                  <option value="arp">Arp</option>
+                  <option value="drum">Drum</option>
+                </select>
+              </div>
+            </div>
+            <div class="point-actions">
+              <button id="boostPoint" class="warn">현재 Step 강조</button>
+              <button id="softenPoint" class="secondary">현재 Step 덜기</button>
+              <button id="boostPattern" class="hot">현재 패턴 고조</button>
+              <button id="softenPattern" class="secondary">현재 패턴 완화</button>
+            </div>
+            <div class="point-info" id="pointInfo">그리드 칸이나 Step 번호를 클릭하면 조정할 포인트가 선택됩니다. 재생 중에는 현재 지나가는 Step을 바로 강조/완화할 수 있습니다.</div>
+          </div>
+
+          <div class="status" id="status">아직 재생 전입니다. 브라우저 정책상 반드시 버튼 클릭 후 소리가 시작됩니다.</div>
+
+          <div class="score-panel advanced-only" id="scorePanel">
+            <div class="score-head">
+              <b>Composer Score</b>
+              <span class="score-total" id="scoreTotal">-- / 100</span>
+            </div>
+            <div class="score-grid">
+              <div class="score-mini"><span>MELODY</span><i id="melodyScore">--</i></div>
+              <div class="score-mini"><span>LOOP</span><i id="loopScore">--</i></div>
+              <div class="score-mini"><span>GROOVE</span><i id="grooveScore">--</i></div>
+            </div>
+            <div class="review-card" id="reviewCard">
+              <div class="review-title">
+                <b>Composer Review</b>
+                <span class="review-badge" id="reviewBadge">대기 중</span>
+              </div>
+              <div class="review-summary" id="reviewSummary">현재 곡을 평가하면 보존할 채널과 고칠 부분을 추천합니다.</div>
+              <div class="review-columns">
+                <div class="review-box">
+                  <span>KEEP</span>
+                  <ul id="reviewKeep"><li>점수 평가 후 표시됩니다.</li></ul>
+                </div>
+                <div class="review-box">
+                  <span>FIX</span>
+                  <ul id="reviewFix"><li>점수 평가 후 표시됩니다.</li></ul>
+                </div>
+              </div>
+              <div class="review-actions">
+                <button id="applyReviewLocks" class="purple">추천대로 잠그기</button>
+                <button id="fixReviewTarget" class="secondary">추천 보정 실행</button>
+                <button id="fixLoopEnding" class="secondary">루프 끝 보정</button>
+              </div>
+            </div>
+
+            <div class="compare-panel stage-compare" id="comparePanel">
+              <div class="compare-title">
+                <b>A/B Compare</b>
+                <span>현재 버전과 후보를 번갈아 듣기</span>
+              </div>
+              <div class="compare-grid">
+                <div class="compare-slot">
+                  <strong>A · Current</strong>
+                  <span id="compareAName">비어 있음</span>
+                  <div class="compare-actions">
+                    <button id="captureA" class="secondary">A 저장</button>
+                    <button id="playA" class="warn">A 재생</button>
+                    <button id="chooseA" class="secondary">A 선택</button>
+                  </div>
+                </div>
+                <div class="compare-slot">
+                  <strong>B · Candidate</strong>
+                  <span id="compareBName">비어 있음</span>
+                  <div class="compare-actions">
+                    <button id="captureB" class="secondary">B 저장</button>
+                    <button id="playB" class="warn">B 재생</button>
+                    <button id="chooseB" class="secondary">B 선택</button>
+                  </div>
+                </div>
+              </div>
+              <div class="favorite-actions">
+                <button id="saveFavorite" class="purple">★ 현재 Favorite</button>
+                <button id="favoriteToB" class="secondary">최근 Favorite → B</button>
+                <button id="clearCompare" class="secondary">비교 비우기</button>
+              </div>
+              <div class="compare-info" id="compareInfo">A/B 슬롯을 저장하면 현재 곡과 후보를 번갈아 들어보고 더 좋은 쪽을 선택할 수 있습니다.</div>
+            </div>
+
+            <div class="favorite-panel stage-keep" id="favoritePanel">
+              <div class="favorite-title">
+                <b>Favorite Takes</b>
+                <span id="favoriteCount">0개 저장됨</span>
+              </div>
+              <div class="fav-list" id="favoriteList">
+                <div class="hint" style="margin:0;">마음에 드는 곡은 ★ 현재 Favorite으로 보관하세요.</div>
+              </div>
+            </div>
+
+            <div class="take-list" id="takeList">
+              <div class="hint" style="margin:0;">20 Takes를 생성하면 상위 3개 후보가 여기에 표시됩니다.</div>
+            </div>
+          </div>
+
+          <div class="pillbox">
+            <span class="pill">안전 선택: 좌클릭은 선택만</span>
+            <span class="pill">더블클릭: 편집 실행</span>
+            <span class="pill">우클릭: 비우기</span>
+            <span class="pill advanced-pill">편집 모드: 좌클릭으로 음정/길이/세기 변경</span>
+            <span class="pill">모티프: 반복·응답·상승·해소</span>
+            <span class="pill">구조: Build-up 후 루프</span>
+            <span class="pill">길이: 짧은음/긴음/타이</span>
+            <span class="pill">세기: 강박/약박/휴먼라이즈</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>패턴 체인 / 직접 수정 그리드</h2>
+        <div class="songbar" id="songbar"></div>
+        <div class="timeline advanced-only" id="timeline"></div>
+        <div class="studio-strip advanced-only">
+          <div class="studio-knob"><b>ARTICULATION</b><span id="articulationInfo">Mixed</span></div>
+          <div class="studio-knob"><b>VELOCITY</b><span id="velocityInfo">Human</span></div>
+          <div class="studio-knob"><b>LOOP ARC</b><span id="arcInfo">A-A′-B-A</span></div>
+          <div class="studio-knob"><b>EDITING</b><span id="editInfo">Pitch</span></div>
+        </div>
+        <div class="meters">
+          <div class="meter"><span>LEAD <em id="lockChipLead"></em></span><div class="bar"><i id="mLead"></i></div></div>
+          <div class="meter"><span>BASS <em id="lockChipBass"></em></span><div class="bar"><i id="mBass"></i></div></div>
+          <div class="meter"><span>ARP <em id="lockChipArp"></em></span><div class="bar"><i id="mArp"></i></div></div>
+          <div class="meter"><span>DRUM <em id="lockChipDrum"></em></span><div class="bar"><i id="mDrum"></i></div></div>
+        </div>
+        <div class="tracker">
+          <div class="steps" id="steps"></div>
+          <div class="channels" id="channels"></div>
+        </div>
+      </section>
+    </div>
+
+    <section class="card stage-finish" style="margin-top:16px;">
+      <h2>Export / 자체 포맷 저장</h2>
+      <div class="body">
+        <div class="finish-note">
+          본편에서 들은 악기 프리셋과 드럼 키트가 HTML 플레이어에도 최대한 동일하게 반영됩니다. 브라우저별 오디오 엔진 차이는 있을 수 있습니다.
+        </div>
+        <div class="row four" style="margin-top:12px;">
+          <button id="exportJson" class="secondary">MCT Base64 만들기</button>
+          <button id="downloadMct" class="secondary">.mct 저장</button>
+          <button id="downloadOgg" class="secondary">.ogg 녹음 저장</button>
+          <button id="copyExport" class="secondary">Base64 복사</button>
+        </div>
+        <textarea id="exportBox" placeholder="여기에 MCT Base64 음악 데이터가 생성됩니다."></textarea>
+
+        <div class="row" style="margin-top:12px;">
+          <button id="exportPlayer" class="hot">단일 HTML 삽입용 플레이어 생성</button>
+          <button id="copyPlayer" class="secondary">플레이어 코드 복사</button>
+        </div>
+        <textarea id="playerBox" placeholder="여기에 다른 HTML에 붙여 넣을 수 있는 초소형 배경음악 플레이어 코드가 생성됩니다."></textarea>
+
+        <div class="file-row" style="margin-top:12px;">
+          <input id="importFile" type="file" accept=".mct,application/json,text/plain" />
+          <button id="loadMct" class="secondary">.mct 불러오기</button>
+        </div>
+        <div class="file-row" style="margin-top:12px;">
+          <input id="mp3File" type="file" accept="audio/mpeg,audio/mp3,.mp3" />
+          <button id="analyzeMp3" class="secondary">MP3 → MCT 근사 변환</button>
+        </div>
+        <div class="mp3-report" id="mp3Report">
+          <b>MP3 Analysis Report</b><br />
+          MP3 변환은 완전한 오디오→MIDI 변환이 아니라 근사 변환입니다. 단순한 8비트/칩튠 음원에서 가장 잘 작동하며, 저작권이 있는 MP3는 권리가 있을 때만 사용하세요.
+          <div class="mp3-followups">
+            <button id="mp3LockRecommended" class="secondary">추천 잠금</button>
+            <button id="mp3FixRecommended" class="secondary">추천 보정</button>
+            <button id="mp3LoopFix" class="secondary">루프 끝 보정</button>
+          </div>
+        </div>
+        <p class="hint">
+          <span class="mini">.mct</span>는 실제 오디오가 아니라 BPM, 무드, 스케일, 코드 진행, 패턴 데이터를 저장하는 자체 포맷입니다. HTML 게임이나 시뮬레이터에 넣으면 Web Audio가 실시간으로 8비트 음악을 합성합니다.<br />
+          MP3 → MCT는 연구용/창작 보조용 근사 기능입니다. 원본 음원의 저작권과 이용 권한은 사용자가 직접 확인해야 합니다.
+        </p>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const NOTE_NAMES = ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
+    const SCALES = {
+      minorPent: [0,3,5,7,10,12],
+      majorPent: [0,2,4,7,9,12],
+      naturalMinor: [0,2,3,5,7,8,10,12],
+      major: [0,2,4,5,7,9,11,12],
+      dorian: [0,2,3,5,7,9,10,12],
+      phrygian: [0,1,3,5,7,8,10,12],
+      chromaticLite: [0,1,3,4,6,7,10,12]
+    };
+
+    const PROGRESSIONS = {
+      pop: [0,4,5,3,0,4,5,3],
+      classic: [0,5,3,4,0,5,3,4],
+      minorLoop: [0,5,2,6,0,5,2,6],
+      dark: [0,1,4,0,0,1,4,0],
+      space: [0,3,6,2,0,3,6,2],
+      drive: [0,0,6,5,0,0,6,5]
+    };
+
+    const MOODS = {
+      cute: { bpm: 142, root: "C", scale: "majorPent", formula: "randomWalk", density: 68, variation: 38, drumPattern: "cute", chordProgression: "classic", songStructure: "aaba", motifMode: "strong" },
+      tension: { bpm: 112, root: "D", scale: "naturalMinor", formula: "euclid", density: 46, variation: 72, drumPattern: "sparse", chordProgression: "dark", songStructure: "build8", motifMode: "balanced" },
+      space: { bpm: 96, root: "A", scale: "dorian", formula: "sine", density: 52, variation: 62, drumPattern: "sparse", chordProgression: "space", songStructure: "wave8", motifMode: "loose" },
+      volcano: { bpm: 128, root: "E", scale: "phrygian", formula: "cellular", density: 58, variation: 85, drumPattern: "tribal", chordProgression: "dark", songStructure: "build8", motifMode: "balanced" },
+      lab: { bpm: 132, root: "F#", scale: "chromaticLite", formula: "cellular", density: 64, variation: 76, drumPattern: "breakbeat", chordProgression: "space", songStructure: "wave8", motifMode: "loose" },
+      happy: { bpm: 150, root: "G", scale: "major", formula: "randomWalk", density: 74, variation: 42, drumPattern: "cute", chordProgression: "pop", songStructure: "aaba", motifMode: "strong" },
+      sad: { bpm: 82, root: "A", scale: "naturalMinor", formula: "sine", density: 38, variation: 36, drumPattern: "sparse", chordProgression: "minorLoop", songStructure: "story12", motifMode: "strong" },
+      anger: { bpm: 164, root: "F", scale: "phrygian", formula: "euclid", density: 72, variation: 90, drumPattern: "drive", chordProgression: "dark", songStructure: "build8", motifMode: "balanced" },
+      running: { bpm: 178, root: "D", scale: "minorPent", formula: "euclid", density: 82, variation: 58, drumPattern: "drive", chordProgression: "drive", songStructure: "run8", motifMode: "strong" }
+    };
+
+    const STRUCTURES = {
+      aaba: ["A", "A'", "B", "A"],
+      build8: ["Intro", "A", "A'", "Build", "B", "Peak", "Resolve", "A"],
+      wave8: ["Low", "A", "Mid", "A'", "High", "B", "Mid", "A"],
+      run8: ["Warm", "Run", "Run+", "Sprint", "Break", "Sprint", "Peak", "Finish"],
+      story12: ["Intro", "A", "A'", "B", "Build", "Peak", "Break", "A'", "Peak", "Resolve", "A", "Outro"]
+    };
+
+    const ROLE_ENERGY = {
+      Intro: 0.45, Low: 0.48, Warm: 0.55, A: 0.72, "A'": 0.78, Mid: 0.76,
+      B: 0.86, Build: 0.94, "Run": 0.88, "Run+": 0.96, Sprint: 1.08,
+      High: 1.05, Peak: 1.18, Break: 0.38, Resolve: 0.62, Finish: 1.0, Outro: 0.34
+    };
+
+    const LENGTH_PRESETS = {
+      staccato: [0.45, 0.55, 0.75, 1],
+      normal: [0.85, 1, 1, 1],
+      mixed: [0.55, 0.75, 1, 1, 2],
+      legato: [1, 1, 2, 2, 3],
+      dramatic: [0.45, 0.75, 1, 2, 3, 4]
+    };
+
+    const VELOCITY_STEPS = [0.45, 0.6, 0.75, 0.9, 1.05, 1.2];
+
+    const INSTRUMENTS = {
+      lead: {
+        softSquare: { wave: "square", vol: 0.16, attack: 0.012, release: 0.08, detune: 0 },
+        brightSquare: { wave: "square", vol: 0.2, attack: 0.006, release: 0.05, detune: 0 },
+        pulseLead: { wave: "sawtooth", vol: 0.14, attack: 0.005, release: 0.04, detune: -5 },
+        tinyBell: { wave: "triangle", vol: 0.18, attack: 0.004, release: 0.16, detune: 12 },
+        laserLead: { wave: "square", vol: 0.18, attack: 0.003, release: 0.03, detune: -12 }
+      },
+      bass: {
+        triangleBass: { wave: "triangle", vol: 0.25, attack: 0.01, release: 0.08, detune: 0 },
+        squareBass: { wave: "square", vol: 0.21, attack: 0.008, release: 0.06, detune: 0 },
+        pluckBass: { wave: "triangle", vol: 0.24, attack: 0.003, release: 0.025, detune: 0 },
+        subBass: { wave: "sine", vol: 0.28, attack: 0.015, release: 0.12, detune: 0 }
+      },
+      arp: {
+        thinArp: { wave: "square", vol: 0.09, attack: 0.004, release: 0.035, detune: 0 },
+        sparkleArp: { wave: "triangle", vol: 0.12, attack: 0.003, release: 0.09, detune: 7 },
+        bellArp: { wave: "sine", vol: 0.14, attack: 0.004, release: 0.14, detune: 12 }
+      }
+    };
+
+    const els = {
+      workflowTabs: Array.from(document.querySelectorAll(".workflow-tab")),
+      basicFind: document.getElementById("basicFind"),
+      basicPlay: document.getElementById("basicPlay"),
+      basicFavorite: document.getElementById("basicFavorite"),
+      basicFix: document.getElementById("basicFix"),
+      basicCute: document.getElementById("basicCute"),
+      basicExport: document.getElementById("basicExport"),
+      uiMode: document.getElementById("uiMode"),
+      editMode: document.getElementById("editMode"),
+      mood: document.getElementById("mood"),
+      seed: document.getElementById("seed"),
+      bpm: document.getElementById("bpm"),
+      root: document.getElementById("root"),
+      scale: document.getElementById("scale"),
+      songStructure: document.getElementById("songStructure"),
+      motifMode: document.getElementById("motifMode"),
+      lengthPreset: document.getElementById("lengthPreset"),
+      velocityPreset: document.getElementById("velocityPreset"),
+      swing: document.getElementById("swing"),
+      humanize: document.getElementById("humanize"),
+      leadInstrument: document.getElementById("leadInstrument"),
+      bassInstrument: document.getElementById("bassInstrument"),
+      arpInstrument: document.getElementById("arpInstrument"),
+      drumKit: document.getElementById("drumKit"),
+      formula: document.getElementById("formula"),
+      drumPattern: document.getElementById("drumPattern"),
+      chordProgression: document.getElementById("chordProgression"),
+      density: document.getElementById("density"),
+      variation: document.getElementById("variation"),
+      applyMood: document.getElementById("applyMood"),
+      generate: document.getElementById("generate"),
+      append: document.getElementById("append"),
+      duplicate: document.getElementById("duplicate"),
+      undoBtn: document.getElementById("undoBtn"),
+      redoBtn: document.getElementById("redoBtn"),
+      saveCheckpoint: document.getElementById("saveCheckpoint"),
+      historyInfo: document.getElementById("historyInfo"),
+      pointBadge: document.getElementById("pointBadge"),
+      pointInfo: document.getElementById("pointInfo"),
+      pointTarget: document.getElementById("pointTarget"),
+      lockTiles: Array.from(document.querySelectorAll(".lock-tile")),
+      lockInfo: document.getElementById("lockInfo"),
+      fixScope: document.getElementById("fixScope"),
+      fixTarget: document.getElementById("fixTarget"),
+      rerollUnlocked: document.getElementById("rerollUnlocked"),
+      fixWeakest: document.getElementById("fixWeakest"),
+      lockMelodyPreset: document.getElementById("lockMelodyPreset"),
+      unlockAll: document.getElementById("unlockAll"),
+      directorButtons: {
+        cute: document.getElementById("dirCute"),
+        lessNoisy: document.getElementById("dirLessNoisy"),
+        melody: document.getElementById("dirMelody"),
+        drumsDown: document.getElementById("dirDrumsDown"),
+        build: document.getElementById("dirBuild"),
+        smoothLoop: document.getElementById("dirSmoothLoop")
+      },
+      lockChips: {
+        lead: document.getElementById("lockChipLead"),
+        bass: document.getElementById("lockChipBass"),
+        arp: document.getElementById("lockChipArp"),
+        drum: document.getElementById("lockChipDrum")
+      },
+      boostPoint: document.getElementById("boostPoint"),
+      softenPoint: document.getElementById("softenPoint"),
+      boostPattern: document.getElementById("boostPattern"),
+      softenPattern: document.getElementById("softenPattern"),
+      randomSeed: document.getElementById("randomSeed"),
+      play: document.getElementById("play"),
+      stop: document.getElementById("stop"),
+      status: document.getElementById("status"),
+      articulationInfo: document.getElementById("articulationInfo"),
+      velocityInfo: document.getElementById("velocityInfo"),
+      arcInfo: document.getElementById("arcInfo"),
+      editInfo: document.getElementById("editInfo"),
+      steps: document.getElementById("steps"),
+      channels: document.getElementById("channels"),
+      songbar: document.getElementById("songbar"),
+      timeline: document.getElementById("timeline"),
+      exportJson: document.getElementById("exportJson"),
+      copyExport: document.getElementById("copyExport"),
+      generateTakes: document.getElementById("generateTakes"),
+      scoreCurrent: document.getElementById("scoreCurrent"),
+      scorePanel: document.getElementById("scorePanel"),
+      scoreTotal: document.getElementById("scoreTotal"),
+      melodyScore: document.getElementById("melodyScore"),
+      loopScore: document.getElementById("loopScore"),
+      grooveScore: document.getElementById("grooveScore"),
+      takeList: document.getElementById("takeList"),
+      reviewCard: document.getElementById("reviewCard"),
+      reviewBadge: document.getElementById("reviewBadge"),
+      reviewSummary: document.getElementById("reviewSummary"),
+      reviewKeep: document.getElementById("reviewKeep"),
+      reviewFix: document.getElementById("reviewFix"),
+      applyReviewLocks: document.getElementById("applyReviewLocks"),
+      fixReviewTarget: document.getElementById("fixReviewTarget"),
+      fixLoopEnding: document.getElementById("fixLoopEnding"),
+      compareAName: document.getElementById("compareAName"),
+      compareBName: document.getElementById("compareBName"),
+      compareInfo: document.getElementById("compareInfo"),
+      captureA: document.getElementById("captureA"),
+      captureB: document.getElementById("captureB"),
+      playA: document.getElementById("playA"),
+      playB: document.getElementById("playB"),
+      chooseA: document.getElementById("chooseA"),
+      chooseB: document.getElementById("chooseB"),
+      saveFavorite: document.getElementById("saveFavorite"),
+      favoriteToB: document.getElementById("favoriteToB"),
+      clearCompare: document.getElementById("clearCompare"),
+      favoriteCount: document.getElementById("favoriteCount"),
+      favoriteList: document.getElementById("favoriteList"),
+      downloadMct: document.getElementById("downloadMct"),
+      downloadOgg: document.getElementById("downloadOgg"),
+      exportBox: document.getElementById("exportBox"),
+      exportPlayer: document.getElementById("exportPlayer"),
+      copyPlayer: document.getElementById("copyPlayer"),
+      playerBox: document.getElementById("playerBox"),
+      importFile: document.getElementById("importFile"),
+      loadMct: document.getElementById("loadMct"),
+      mp3File: document.getElementById("mp3File"),
+      analyzeMp3: document.getElementById("analyzeMp3"),
+      mp3Report: document.getElementById("mp3Report"),
+      mp3LockRecommended: document.getElementById("mp3LockRecommended"),
+      mp3FixRecommended: document.getElementById("mp3FixRecommended"),
+      mp3LoopFix: document.getElementById("mp3LoopFix"),
+      meters: {
+        lead: document.getElementById("mLead"),
+        bass: document.getElementById("mBass"),
+        arp: document.getElementById("mArp"),
+        drum: document.getElementById("mDrum")
+      }
+    };
+
+    let audioCtx = null;
+    let master = null;
+    let delayNode = null;
+    let delayGain = null;
+    let filterNode = null;
+    let recorderDest = null;
+    let timerId = null;
+    let isPlaying = false;
+    let currentPatternIndex = 0;
+    let currentStep = 0;
+    let nextNoteTime = 0;
+    let song = [];
+    let activeCells = [];
+    let motifContext = null;
+    let takeResults = [];
+    let selectedPoint = { pattern: 0, step: 0, channel: "all" };
+    let locks = { lead: false, bass: false, arp: false, drum: false };
+    let latestReview = null;
+    let compareSlots = { a: null, b: null };
+    let favorites = [];
+    let currentStage = "all";
+    let undoStack = [];
+    let redoStack = [];
+    const MAX_HISTORY = 40;
+    const CONTROL_KEYS = ["mood","seed","bpm","root","scale","formula","drumPattern","chordProgression","songStructure","motifMode","density","variation","lengthPreset","velocityPreset","swing","humanize","leadInstrument","bassInstrument","arpInstrument","drumKit","uiMode","editMode"];
+
+    function hashString(str) {
+      let h = 2166136261;
+      for (let i = 0; i < str.length; i++) {
+        h ^= str.charCodeAt(i);
+        h = Math.imul(h, 16777619);
+      }
+      return h >>> 0;
+    }
+
+    function mulberry32(seed) {
+      return function() {
+        let t = seed += 0x6D2B79F5;
+        t = Math.imul(t ^ (t >>> 15), t | 1);
+        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+      };
+    }
+
+    function choice(rng, arr) {
+      return arr[Math.floor(rng() * arr.length)];
+    }
+
+    function clamp(n, min, max) {
+      return Math.max(min, Math.min(max, n));
+    }
+
+    function rootMidi() {
+      return 48 + NOTE_NAMES.indexOf(els.root.value);
+    }
+
+    function midiToName(m) {
+      const name = NOTE_NAMES[((m % 12) + 12) % 12];
+      const oct = Math.floor(m / 12) - 1;
+      return name + oct;
+    }
+
+    function midiToFreq(m) {
+      return 440 * Math.pow(2, (m - 69) / 12);
+    }
+
+    function noteFromDegree(base, scale, degree, octaveOffset = 0) {
+      const len = scale.length - 1;
+      const oct = Math.floor(degree / len);
+      const idx = ((degree % len) + len) % len;
+      return base + scale[idx] + 12 * (oct + octaveOffset);
+    }
+
+    function notePool(channel) {
+      const base = rootMidi();
+      const scale = SCALES[els.scale.value];
+      const pool = [];
+      if (channel === "bass") {
+        for (let d = 0; d < 8; d++) pool.push(noteFromDegree(base - 12, scale, d, -1));
+      } else if (channel === "arp") {
+        for (let d = 0; d < 13; d++) pool.push(noteFromDegree(base, scale, d, 1));
+      } else {
+        for (let d = 0; d < 15; d++) pool.push(noteFromDegree(base, scale, d, 1));
+      }
+      return [...new Set(pool)];
+    }
+
+    function isObj(v) { return v && typeof v === "object"; }
+    function makeNote(n, len = 1, vel = 0.85, tie = false, off = 0) { return { n, len, vel, tie, off }; }
+    function makeDrum(d, vel = 0.85, off = 0) { return d ? { d, vel, off } : null; }
+    function cloneEvent(v) { return isObj(v) ? { ...v } : v; }
+    function noteValue(v) { return isObj(v) ? v.n : v; }
+    function drumValue(v) { return isObj(v) ? v.d : v; }
+    function eventLen(v) { return isObj(v) && Number.isFinite(v.len) ? v.len : 1; }
+    function eventVel(v) { return isObj(v) && Number.isFinite(v.vel) ? v.vel : 1; }
+    function eventTie(v) { return !!(isObj(v) && v.tie); }
+    function eventOff(v) { return isObj(v) && Number.isFinite(v.off) ? v.off : 0; }
+
+    function velocityFor(channel, role, step, rng) {
+      const preset = els.velocityPreset?.value || "human";
+      const energy = roleEnergy(role);
+      let vel = 0.78 + (energy - 0.7) * 0.35;
+      if (step % 4 === 0) vel += 0.18;
+      else if (step % 2 === 0) vel += 0.06;
+      if (channel === "arp" || channel === "drumHat") vel -= 0.18;
+      if (channel === "bass") vel += 0.08;
+      if (preset === "flat") vel = 0.88;
+      if (preset === "groove") vel += (step % 4 === 0 ? 0.22 : step % 2 === 1 ? -0.12 : 0);
+      if (preset === "accent") vel += [0, 4, 8, 12].includes(step) ? 0.25 : -0.05;
+      if (preset === "chaos") vel += (rng() - 0.5) * 0.5;
+      if (preset === "human") vel += (rng() - 0.5) * 0.18;
+      return clamp(vel, 0.35, 1.25);
+    }
+
+    function lengthFor(channel, role, step, rng) {
+      if (channel === "drum") return 1;
+      const preset = els.lengthPreset?.value || "mixed";
+      let choices = LENGTH_PRESETS[preset] || LENGTH_PRESETS.mixed;
+      if (["Intro", "Resolve", "Outro"].includes(role) || els.mood.value === "sad") choices = preset === "staccato" ? choices : [1, 2, 2, 3];
+      if (["Build", "Sprint", "Peak", "Run", "Run+"].includes(role)) choices = preset === "legato" ? [1, 2] : [0.55, 0.75, 1, 1, 1];
+      if (channel === "arp") choices = [0.35, 0.45, 0.55, 0.75, 1];
+      if (channel === "bass") choices = [1, 1, 2, 2, 3];
+      const len = choice(rng, choices);
+      if (step + Math.ceil(len) > 16) return 1;
+      return len;
+    }
+
+    function offsetFor(step, rng) {
+      const swing = Number(els.swing?.value || 0) / 100;
+      const humanize = Number(els.humanize?.value || 0) / 100;
+      const swingOff = step % 2 === 1 ? swing : 0;
+      const humanOff = (rng() - 0.5) * humanize;
+      return clamp(swingOff + humanOff, -0.12, 0.42);
+    }
+
+    function normalizeTies(pattern, channel) {
+      const arr = pattern[channel];
+      for (let i = 0; i < arr.length; i++) if (eventTie(arr[i])) arr[i] = null;
+      for (let i = 0; i < arr.length; i++) {
+        const v = arr[i];
+        const n = noteValue(v);
+        if (n === null || n === undefined) continue;
+        const len = Math.max(1, Math.floor(eventLen(v)));
+        for (let j = 1; j < len && i + j < arr.length; j++) {
+          if (arr[i + j] === null) arr[i + j] = makeNote(n, 0, eventVel(v), true, 0);
+        }
+      }
+    }
+
+    function applyArticulation(pattern, role, rng) {
+      ["lead", "bass", "arp"].forEach(channel => {
+        for (let s = 0; s < 16; s++) {
+          const n = noteValue(pattern[channel][s]);
+          if (n === null || n === undefined || eventTie(pattern[channel][s])) continue;
+          const len = lengthFor(channel, role, s, rng);
+          const vel = velocityFor(channel, role, s, rng);
+          const off = offsetFor(s, rng);
+          pattern[channel][s] = makeNote(n, len, vel, false, off);
+        }
+        normalizeTies(pattern, channel);
+      });
+      for (let s = 0; s < 16; s++) {
+        const d = drumValue(pattern.drum[s]);
+        if (!d) continue;
+        const channel = d === "H" ? "drumHat" : "drum";
+        pattern.drum[s] = makeDrum(d, velocityFor(channel, role, s, rng), offsetFor(s, rng));
+      }
+      return pattern;
+    }
+
+    function euclid(steps, pulses, rotate = 0) {
+      const out = Array(steps).fill(false);
+      let bucket = 0;
+      for (let i = 0; i < steps; i++) {
+        bucket += pulses;
+        if (bucket >= steps) {
+          bucket -= steps;
+          out[(i + rotate) % steps] = true;
+        }
+      }
+      return out;
+    }
+
+    function cellularBits(seed, steps) {
+      let state = seed & 255;
+      const out = [];
+      for (let i = 0; i < steps; i++) {
+        const left = (state << 1) & 255;
+        const right = state >> 1;
+        state = (left ^ (state | right) ^ 0b10110100) & 255;
+        out.push(Boolean(state & (1 << (i % 8))));
+      }
+      return out;
+    }
+
+    function setWorkflowStage(stage = "all") {
+      currentStage = stage;
+      document.body.classList.remove("stage-all", "stage-find", "stage-keep", "stage-fix", "stage-compare", "stage-finish");
+      document.body.classList.add(`stage-${stage}`);
+      els.workflowTabs.forEach(btn => btn.classList.toggle("active", btn.dataset.stage === stage));
+      if (stage === "finish") document.querySelector(".stage-finish")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+
+    function applyMood(generate = true) {
+      if (generate) pushHistory("무드 적용 전");
+      const p = MOODS[els.mood.value];
+      Object.entries(p).forEach(([k, v]) => {
+        if (els[k]) els[k].value = v;
+      });
+      if (generate) generateSong(false);
+      setStatus(`무드 적용: ${els.mood.options[els.mood.selectedIndex].text}`);
+    }
+
+    function makeDrumStep(patternName, step, rng, variation, rhythm) {
+      const s = step;
+      if (patternName === "basic") {
+        if (s === 0 || s === 8) return "K";
+        if (s === 4 || s === 12) return "S";
+        if (s % 2 === 0 || rng() < 0.16) return "H";
+      }
+      if (patternName === "cute") {
+        if (s === 0 || s === 10) return "K";
+        if (s === 4 || s === 12) return "S";
+        if ([2,6,8,14].includes(s) || rng() < 0.18) return "H";
+      }
+      if (patternName === "drive") {
+        if ([0,3,8,11].includes(s)) return "K";
+        if ([4,12].includes(s)) return "S";
+        if (s % 2 === 0 || rhythm?.[s] || rng() < 0.28) return "H";
+      }
+      if (patternName === "breakbeat") {
+        if ([0,7,10].includes(s)) return "K";
+        if ([4,12,15].includes(s)) return "S";
+        if ([2,6,8,11,14].includes(s) || rng() < 0.16) return "H";
+      }
+      if (patternName === "tribal") {
+        if ([0,3,6,8,11,14].includes(s)) return "K";
+        if ([4,12].includes(s)) return "S";
+        if (rhythm?.[s] && rng() < 0.55) return "H";
+      }
+      if (patternName === "sparse") {
+        if (s === 0) return "K";
+        if (s === 12) return "S";
+        if ([6,14].includes(s) && rng() < 0.7) return "H";
+      }
+      if ((s === 7 || s === 15) && rng() < variation) return choice(rng, ["H", "S", "K"]);
+      return null;
+    }
+
+    function getStructureRoles() {
+      return STRUCTURES[els.songStructure.value] || STRUCTURES.aaba;
+    }
+
+    function roleEnergy(role) {
+      return ROLE_ENERGY[role] ?? 0.76;
+    }
+
+    function cloneSongData(patterns) {
+      return JSON.parse(JSON.stringify(patterns || []));
+    }
+
+    function cloneMaybe(value) {
+      return value == null ? null : JSON.parse(JSON.stringify(value));
+    }
+
+    function captureState(label = "작업 상태") {
+      const controls = {};
+      CONTROL_KEYS.forEach(k => {
+        if (els[k]) controls[k] = els[k].value;
+      });
+      return {
+        label,
+        time: new Date().toLocaleTimeString(),
+        controls,
+        motif: cloneMaybe(motifContext),
+        patterns: cloneSongData(song),
+        currentPatternIndex,
+        currentStep,
+        selectedPoint: cloneMaybe(selectedPoint),
+        locks: cloneMaybe(locks),
+        score: song?.length ? scoreCandidate(song) : null
+      };
+    }
+
+    function restoreSnapshot(snapshot, actionLabel = "복원", options = {}) {
+      if (!snapshot) return;
+      const { clearTakes = true, showStatus = true } = options;
+      stop(false);
+      Object.entries(snapshot.controls || {}).forEach(([k, v]) => {
+        if (els[k]) els[k].value = v;
+      });
+      motifContext = cloneMaybe(snapshot.motif);
+      song = cloneSongData(snapshot.patterns);
+      currentPatternIndex = Math.min(snapshot.currentPatternIndex || 0, Math.max(0, song.length - 1));
+      currentStep = snapshot.currentStep || 0;
+      selectedPoint = snapshot.selectedPoint || { pattern: currentPatternIndex, step: currentStep, channel: "all" };
+      locks = snapshot.locks || { lead: false, bass: false, arp: false, drum: false };
+      if (clearTakes) takeResults = [];
+      applyUiMode();
+      render();
+      if (snapshot.score) renderScore(snapshot.score);
+      updateHistoryInfo();
+      updateCompareUi();
+    renderFavorites();
+    renderMp3Report({ bpm: "--", pitch: "--", drum: "--", loop: "--", fitLabel: "대기 중", recommendation: "MP3를 변환하면 분석 결과가 표시됩니다." });
+      if (showStatus) setStatus(`${actionLabel}: ${snapshot.label} · ${snapshot.time}`);
+    }
+
+    function applySnapshot(snapshot, actionLabel = "복원") {
+      restoreSnapshot(snapshot, actionLabel, { clearTakes: true, showStatus: true });
+    }
+
+    function pushHistory(label = "변경 전") {
+      if (!song || !song.length) return;
+      undoStack.push(captureState(label));
+      if (undoStack.length > MAX_HISTORY) undoStack.shift();
+      redoStack = [];
+      updateHistoryInfo();
+    }
+
+    function undo() {
+      if (!undoStack.length) {
+        setStatus("되돌릴 이전 상태가 없습니다.", "warn");
+        return;
+      }
+      redoStack.push(captureState("Undo 직전 상태"));
+      applySnapshot(undoStack.pop(), "Undo");
+    }
+
+    function redo() {
+      if (!redoStack.length) {
+        setStatus("다시 실행할 상태가 없습니다.", "warn");
+        return;
+      }
+      undoStack.push(captureState("Redo 직전 상태"));
+      applySnapshot(redoStack.pop(), "Redo");
+    }
+
+    function saveCheckpoint() {
+      if (!song.length) return;
+      pushHistory(`Checkpoint · ${els.mood.options[els.mood.selectedIndex].text} · ${els.seed.value}`);
+      compareSlots.a = captureState("Checkpoint A");
+      updateCompareUi();
+      setStatus("현재 곡을 Undo 히스토리에 체크포인트로 저장하고 A 슬롯에도 보관했습니다.");
+    }
+
+    function updateHistoryInfo() {
+      if (!els.historyInfo) return;
+      els.undoBtn.disabled = undoStack.length === 0;
+      els.redoBtn.disabled = redoStack.length === 0;
+      const last = undoStack[undoStack.length - 1];
+      els.historyInfo.textContent = last
+        ? `Undo ${undoStack.length}개 · Redo ${redoStack.length}개 · 최근 저장: ${last.label}`
+        : `Undo ${undoStack.length}개 · Redo ${redoStack.length}개 · 새로 만든 곡은 Checkpoint로 보관할 수 있습니다.`;
+    }
+
+    function snapshotTitle(snapshot) {
+      if (!snapshot) return "비어 있음";
+      const score = snapshot.score ? `${snapshot.score.total}점` : "미평가";
+      const mood = snapshot.controls?.mood || "mood";
+      const seed = snapshot.controls?.seed || "seed";
+      return `${snapshot.label} · ${score} · ${mood} · ${seed}`;
+    }
+
+    function updateCompareUi() {
+      if (!els.compareAName) return;
+      els.compareAName.textContent = snapshotTitle(compareSlots.a);
+      els.compareBName.textContent = snapshotTitle(compareSlots.b);
+      els.playA.disabled = !compareSlots.a;
+      els.playB.disabled = !compareSlots.b;
+      els.chooseA.disabled = !compareSlots.a;
+      els.chooseB.disabled = !compareSlots.b;
+      const aScore = compareSlots.a?.score?.total ?? "--";
+      const bScore = compareSlots.b?.score?.total ?? "--";
+      els.compareInfo.textContent = `A ${aScore}점 / B ${bScore}점. 재생으로 비교한 뒤 더 좋은 쪽을 선택하세요.`;
+    }
+
+    function captureCompareSlot(slot) {
+      if (!song.length) return;
+      compareSlots[slot] = captureState(slot === "a" ? "Compare A" : "Compare B");
+      updateCompareUi();
+      setStatus(`${slot.toUpperCase()} 슬롯에 현재 곡을 저장했습니다.`);
+    }
+
+    async function playCompareSlot(slot) {
+      const snapshot = compareSlots[slot];
+      if (!snapshot) {
+        setStatus(`${slot.toUpperCase()} 슬롯이 비어 있습니다.`, "warn");
+        return;
+      }
+      restoreSnapshot(snapshot, `${slot.toUpperCase()} 미리듣기`, { clearTakes: false, showStatus: false });
+      await play();
+      setStatus(`${slot.toUpperCase()} 슬롯을 재생 중입니다. 마음에 들면 ${slot.toUpperCase()} 선택을 누르세요.`);
+    }
+
+    function chooseCompareSlot(slot) {
+      const snapshot = compareSlots[slot];
+      if (!snapshot) {
+        setStatus(`${slot.toUpperCase()} 슬롯이 비어 있습니다.`, "warn");
+        return;
+      }
+      pushHistory(`A/B ${slot.toUpperCase()} 선택 전`);
+      restoreSnapshot(snapshot, `${slot.toUpperCase()} 선택`, { clearTakes: false, showStatus: true });
+      compareSlots.a = captureState("Selected A");
+      updateCompareUi();
+    }
+
+    function clearCompareSlots() {
+      compareSlots = { a: null, b: null };
+      updateCompareUi();
+      setStatus("A/B 비교 슬롯을 비웠습니다.");
+    }
+
+    function favoriteSnapshot(snapshot, label = "Favorite") {
+      if (!snapshot) return;
+      const copy = cloneMaybe(snapshot);
+      copy.label = label;
+      copy.favoriteId = `${Date.now().toString(36)}-${Math.floor(Math.random() * 99999).toString(36)}`;
+      favorites.unshift(copy);
+      favorites = favorites.slice(0, 16);
+      renderFavorites();
+      setStatus(`Favorite 저장 완료: ${label}`);
+    }
+
+    function saveCurrentFavorite() {
+      if (!song.length) return;
+      const score = scoreCandidate(song);
+      renderScore(score);
+      favoriteSnapshot(captureState(`Favorite · ${score.total}점`), `Favorite · ${score.total}점`);
+    }
+
+    function snapshotFromTake(take, index) {
+      const base = captureState(`Best Take #${index + 1}`);
+      base.controls.seed = take.seed;
+      base.motif = cloneMaybe(take.motif);
+      base.patterns = cloneSongData(take.patterns);
+      base.currentPatternIndex = 0;
+      base.currentStep = 0;
+      base.score = cloneMaybe(take.score);
+      return base;
+    }
+
+    function renderFavorites() {
+      if (!els.favoriteList) return;
+      els.favoriteCount.textContent = `${favorites.length}개 저장됨`;
+      if (!favorites.length) {
+        els.favoriteList.innerHTML = `<div class="hint" style="margin:0;">마음에 드는 곡은 ★ 현재 Favorite으로 보관하세요.</div>`;
+        return;
+      }
+      els.favoriteList.innerHTML = "";
+      favorites.forEach((fav, index) => {
+        const item = document.createElement("div");
+        item.className = "fav-item";
+        const score = fav.score ? `${fav.score.total}점 · M${fav.score.melody}/L${fav.score.loop}/G${fav.score.groove}` : "미평가";
+        item.innerHTML = `
+          <div>
+            <strong>${fav.label}</strong>
+            <span>${score}<br>${fav.controls?.seed || "seed 없음"}</span>
+          </div>
+          <button class="secondary" data-action="compare">B비교</button>
+          <button class="secondary" data-action="apply">적용</button>
+          <button class="danger" data-action="delete">삭제</button>
+        `;
+        item.querySelector('[data-action="compare"]').onclick = () => {
+          if (!compareSlots.a) compareSlots.a = captureState("Compare A · 현재");
+          compareSlots.b = cloneMaybe(fav);
+          updateCompareUi();
+          setStatus(`Favorite #${index + 1}을 B 슬롯에 넣었습니다. A/B 재생으로 비교하세요.`);
+        };
+        item.querySelector('[data-action="apply"]').onclick = () => {
+          pushHistory(`Favorite #${index + 1} 적용 전`);
+          restoreSnapshot(fav, `Favorite #${index + 1} 적용`, { clearTakes: false, showStatus: true });
+        };
+        item.querySelector('[data-action="delete"]').onclick = () => {
+          favorites.splice(index, 1);
+          renderFavorites();
+          setStatus(`Favorite #${index + 1}을 삭제했습니다.`);
+        };
+        els.favoriteList.appendChild(item);
+      });
+    }
+
+    function latestFavoriteToB() {
+      if (!favorites.length) {
+        setStatus("저장된 Favorite이 없습니다.", "warn");
+        return;
+      }
+      if (!compareSlots.a) compareSlots.a = captureState("Compare A · 현재");
+      compareSlots.b = cloneMaybe(favorites[0]);
+      updateCompareUi();
+      setStatus("최근 Favorite을 B 슬롯에 넣었습니다.");
+    }
+
+    function updateLockUi() {
+      if (!els.lockTiles?.length) return;
+      els.lockTiles.forEach(tile => {
+        const channel = tile.dataset.lock;
+        const isLocked = !!locks[channel];
+        tile.classList.toggle("locked", isLocked);
+        tile.textContent = isLocked ? `🔒 ${channel.toUpperCase()}` : channel.toUpperCase();
+      });
+
+      Object.entries(els.lockChips || {}).forEach(([channel, el]) => {
+        if (!el) return;
+        el.className = locks[channel] ? "locked-chip" : "";
+        el.textContent = locks[channel] ? "LOCK" : "";
+      });
+
+      const lockedNames = Object.entries(locks)
+        .filter(([, value]) => value)
+        .map(([channel]) => channel.toUpperCase());
+
+      if (els.lockInfo) {
+        els.lockInfo.textContent = lockedNames.length
+          ? `잠금 중: ${lockedNames.join(", ")}. 다시 생성해도 이 채널들은 보존됩니다.`
+          : "아직 잠긴 채널이 없습니다. 마음에 드는 채널을 잠그고 나머지만 다시 생성해보세요.";
+      }
+    }
+
+    function toggleLock(channel) {
+      if (!Object.prototype.hasOwnProperty.call(locks, channel)) return;
+      locks[channel] = !locks[channel];
+      updateLockUi();
+      setStatus(`${channel.toUpperCase()} ${locks[channel] ? "잠금" : "잠금 해제"} 완료`);
+    }
+
+    function unlockAllChannels() {
+      pushHistory("전체 잠금 해제 전");
+      locks = { lead: false, bass: false, arp: false, drum: false };
+      updateLockUi();
+      setStatus("모든 채널 잠금을 해제했습니다.");
+    }
+
+    function lockMelodyPreset() {
+      pushHistory("멜로디 보존 모드 전");
+      locks = { lead: true, bass: false, arp: false, drum: false };
+      if (els.fixTarget) els.fixTarget.value = "unlocked";
+      updateLockUi();
+      setStatus("멜로디 보존 모드: Lead를 잠그고 Bass/Arp/Drum만 바꿀 수 있습니다.");
+    }
+
+    function fixChannels() {
+      const target = els.fixTarget?.value || "unlocked";
+      if (target === "unlocked") return ["lead", "bass", "arp", "drum"].filter(channel => !locks[channel]);
+      return locks[target] ? [] : [target];
+    }
+
+    function makeVariationSeed(label = "FIX") {
+      const base = els.seed.value || "MCT";
+      const time = Date.now().toString(36);
+      const rand = Math.floor(Math.random() * 999999).toString(36);
+      return `${base}-${label}-${time}-${rand}`;
+    }
+
+    function regenerateUnlocked() {
+      const channels = fixChannels();
+      if (!channels.length) {
+        setStatus("수정할 채널이 없습니다. 잠금을 해제하거나 수정 대상을 바꿔주세요.", "warn");
+        return;
+      }
+      if (!song.length) generateSong(false);
+
+      pushHistory("Keep & Fix 다시 생성 전");
+      stop(false);
+
+      const built = buildSongForSeed(makeVariationSeed("FIX"));
+      const scope = els.fixScope?.value || "current";
+      const indexes = scope === "all" ? song.map((_, index) => index) : [currentPatternIndex];
+
+      indexes.forEach(index => {
+        if (!song[index] || !built.patterns[index]) return;
+        channels.forEach(channel => {
+          song[index][channel] = cloneSongData(built.patterns[index][channel]);
+          if (channel !== "drum") normalizeTies(song[index], channel);
+        });
+      });
+
+      render();
+      const score = scoreCurrentSong();
+      setStatus(`${scope === "all" ? "전체 곡" : `P${currentPatternIndex + 1}`}에서 ${channels.map(c => c.toUpperCase()).join("/")}만 다시 생성했습니다. 총점 ${score.total}점`);
+    }
+
+    function findWeakPatternIndex(metric = "energy") {
+      if (!song.length) return 0;
+      let worstIndex = 0;
+      let worstValue = -Infinity;
+
+      song.forEach((pattern, index) => {
+        let value;
+        if (metric === "lead") value = 1 - channelDensity([pattern], "lead");
+        else if (metric === "drum") value = 1 - channelDensity([pattern], "drum");
+        else {
+          const expected = roleEnergy(pattern.role || "A") * 0.58;
+          value = Math.abs(patternEnergy(pattern) - expected);
+        }
+
+        if (value > worstValue) {
+          worstValue = value;
+          worstIndex = index;
+        }
+      });
+
+      return worstIndex;
+    }
+
+    function fixWeakestPart() {
+      if (!song.length) return;
+      const score = scoreCandidate(song);
+      let target = "unlocked";
+      let metric = "energy";
+
+      if (score.melody <= score.loop && score.melody <= score.groove) {
+        target = locks.lead ? "unlocked" : "lead";
+        metric = "lead";
+      } else if (score.groove <= score.melody && score.groove <= score.loop) {
+        target = locks.drum ? "unlocked" : "drum";
+        metric = "drum";
+      }
+
+      const weakIndex = findWeakPatternIndex(metric);
+      currentPatternIndex = weakIndex;
+      if (els.fixScope) els.fixScope.value = "current";
+      if (els.fixTarget) els.fixTarget.value = target;
+      regenerateUnlocked();
+      setStatus(`가장 약한 부분 자동 보정: P${weakIndex + 1} · ${target === "unlocked" ? "잠기지 않은 채널" : target.toUpperCase()} 중심으로 수정했습니다.`);
+    }
+
+    function setSelectedPoint(pattern, step, channel = "all", rerender = true) {
+      selectedPoint = {
+        pattern: clamp(pattern, 0, Math.max(0, song.length - 1)),
+        step: clamp(step, 0, 15),
+        channel
+      };
+      if (els.pointTarget) els.pointTarget.value = channel;
+      updatePointInfo();
+      if (rerender) render();
+      updateCompareUi();
+      renderFavorites();
+    }
+
+    function updatePointInfo() {
+      if (!els.pointBadge || !els.pointInfo) return;
+      const p = song[selectedPoint.pattern];
+      const role = p?.role ? ` · ${p.role}` : "";
+      const channelLabel = selectedPoint.channel === "all" ? "전체" : selectedPoint.channel.toUpperCase();
+      els.pointBadge.textContent = `P${String(selectedPoint.pattern + 1).padStart(2, "0")} · Step ${String(selectedPoint.step + 1).padStart(2, "0")}`;
+      els.pointInfo.textContent = `${channelLabel} 대상${role}. 강조하면 벨로시티가 올라가고 비어 있는 칸에는 자연스러운 이벤트를 추가합니다. 덜기는 세기를 낮추고 너무 약해지면 쉼표처럼 정리합니다.`;
+    }
+
+    function targetChannels() {
+      const target = els.pointTarget?.value || selectedPoint.channel || "all";
+      return target === "all" ? ["lead", "bass", "arp", "drum"] : [target];
+    }
+
+    function nearbyNote(pattern, channel, step) {
+      const pool = notePool(channel);
+      for (let dist = 1; dist < 16; dist++) {
+        const left = step - dist;
+        const right = step + dist;
+        if (left >= 0) {
+          const n = noteValue(pattern[channel][left]);
+          if (n !== null && n !== undefined && !eventTie(pattern[channel][left])) return n;
+        }
+        if (right < 16) {
+          const n = noteValue(pattern[channel][right]);
+          if (n !== null && n !== undefined && !eventTie(pattern[channel][right])) return n;
+        }
+      }
+      return pool[Math.floor(pool.length / 2)] || rootMidi();
+    }
+
+    function createPointEvent(pattern, channel, step) {
+      if (channel === "drum") {
+        const d = step % 4 === 0 ? "K" : step % 4 === 2 ? "S" : "H";
+        return makeDrum(d, 0.92, 0);
+      }
+      const n = channel === "bass" ? noteFromDegree(rootMidi() - 12, SCALES[els.scale.value], 0, -1) : nearbyNote(pattern, channel, step);
+      const len = channel === "arp" ? 0.75 : channel === "bass" ? 1.5 : 1;
+      const vel = channel === "arp" ? 0.72 : 0.92;
+      return makeNote(n, len, vel, false, 0);
+    }
+
+    function adjustEvent(v, channel, amount, pattern, step) {
+      let ev = cloneEvent(v);
+      if (!ev || (channel !== "drum" && (noteValue(ev) === null || noteValue(ev) === undefined))) {
+        if (amount <= 0) return null;
+        ev = createPointEvent(pattern, channel, step);
+      }
+      if (channel === "drum") {
+        const d = drumValue(ev);
+        if (!d) return amount > 0 ? createPointEvent(pattern, channel, step) : null;
+        const nextVel = clamp(eventVel(ev) + amount, 0.15, 1.35);
+        return nextVel < 0.28 ? null : makeDrum(d, nextVel, eventOff(ev));
+      }
+      if (eventTie(ev)) return ev;
+      const nextVel = clamp(eventVel(ev) + amount, 0.15, 1.35);
+      if (nextVel < 0.26) return null;
+      const lenBoost = amount > 0 && channel !== "arp" ? 0.25 : amount < 0 ? -0.15 : 0;
+      const nextLen = clamp(eventLen(ev) + lenBoost, 0.45, 4);
+      return makeNote(noteValue(ev), nextLen, nextVel, false, eventOff(ev));
+    }
+
+    function adjustPoint(amount) {
+      const pattern = song[selectedPoint.pattern];
+      if (!pattern) return;
+      pushHistory(amount > 0 ? "포인트 강조 전" : "포인트 덜기 전");
+      targetChannels().forEach(channel => {
+        pattern[channel][selectedPoint.step] = adjustEvent(pattern[channel][selectedPoint.step], channel, amount, pattern, selectedPoint.step);
+        if (channel !== "drum") normalizeTies(pattern, channel);
+      });
+      currentPatternIndex = selectedPoint.pattern;
+      render();
+      const word = amount > 0 ? "강조" : "덜기";
+      setStatus(`P${selectedPoint.pattern + 1} Step ${selectedPoint.step + 1} ${word} 완료 · 대상 ${els.pointTarget.options[els.pointTarget.selectedIndex].text}`);
+    }
+
+    function adjustPatternEnergy(amount) {
+      const pattern = song[currentPatternIndex];
+      if (!pattern) return;
+      pushHistory(amount > 0 ? "패턴 고조 전" : "패턴 완화 전");
+      ["lead", "bass", "arp", "drum"].forEach(channel => {
+        for (let s = 0; s < 16; s++) {
+          pattern[channel][s] = adjustEvent(pattern[channel][s], channel, amount * 0.6, pattern, s);
+        }
+        if (channel !== "drum") normalizeTies(pattern, channel);
+      });
+      render();
+      setStatus(`현재 패턴 P${currentPatternIndex + 1}을 ${amount > 0 ? "조금 더 고조" : "조금 더 완화"}했습니다.`);
+    }
+
+    function directorAction(action) {
+      if (!song.length) return;
+      pushHistory(`Director: ${action} 적용 전`);
+      if (action === "cute") {
+        els.scale.value = "majorPent";
+        els.drumPattern.value = "cute";
+        els.leadInstrument.value = "tinyBell";
+        els.drumKit.value = "cute";
+        song.forEach(p => p.drum.forEach((v, i) => { if (drumValue(v) === "H") p.drum[i] = adjustEvent(v, "drum", -0.08, p, i); }));
+      }
+      if (action === "lessNoisy") {
+        song.forEach(p => {
+          p.arp = p.arp.map((v, i) => i % 2 === 1 ? null : adjustEvent(v, "arp", -0.12, p, i));
+          p.drum = p.drum.map((v, i) => drumValue(v) === "H" && i % 4 !== 0 ? null : adjustEvent(v, "drum", -0.1, p, i));
+          normalizeTies(p, "arp");
+        });
+      }
+      if (action === "melody") {
+        song.forEach(p => {
+          [0, 4, 8, 12].forEach(s => { p.lead[s] = adjustEvent(p.lead[s], "lead", 0.22, p, s); });
+          normalizeTies(p, "lead");
+        });
+      }
+      if (action === "drumsDown") {
+        song.forEach(p => p.drum = p.drum.map((v, i) => drumValue(v) === "H" && i % 4 !== 0 ? null : adjustEvent(v, "drum", -0.18, p, i)));
+      }
+      if (action === "build") {
+        const start = Math.floor(song.length * 0.55);
+        song.forEach((p, idx) => {
+          if (idx >= start) ["lead", "bass", "arp", "drum"].forEach(ch => {
+            for (let s = 8; s < 16; s++) p[ch][s] = adjustEvent(p[ch][s], ch, 0.14, p, s);
+            if (ch !== "drum") normalizeTies(p, ch);
+          });
+        });
+      }
+      if (action === "smoothLoop") improveLoopEnding();
+      render();
+      const score = scoreCurrentSong();
+      setStatus(`Director 적용 완료: ${action} · 총점 ${score.total}점`);
+    }
+
+    function buildSongForSeed(seed) {
+      const prevSeed = els.seed.value;
+      const prevMotif = motifContext;
+      els.seed.value = seed;
+      motifContext = createMotifContext();
+      const roles = getStructureRoles();
+      const patterns = roles.map((_, i) => makePattern(i, motifContext));
+      const motif = JSON.parse(JSON.stringify(motifContext));
+      els.seed.value = prevSeed;
+      motifContext = prevMotif;
+      return { seed, motif, patterns };
+    }
+
+    function allLeadNotes(patterns) {
+      const notes = [];
+      patterns.forEach((p, pi) => {
+        p.lead.forEach((v, s) => {
+          const n = noteValue(v);
+          if (n !== null && n !== undefined && !eventTie(v)) notes.push({ n, pi, s, vel: eventVel(v), len: eventLen(v) });
+        });
+      });
+      return notes;
+    }
+
+    function channelDensity(patterns, channel) {
+      let hit = 0, total = 0;
+      patterns.forEach(p => {
+        p[channel].forEach(v => {
+          total++;
+          const active = channel === "drum" ? !!drumValue(v) : (noteValue(v) !== null && noteValue(v) !== undefined && !eventTie(v));
+          if (active) hit++;
+        });
+      });
+      return total ? hit / total : 0;
+    }
+
+    function firstLastNote(patterns, channel) {
+      const notes = [];
+      patterns.forEach((p, pi) => p[channel].forEach((v, s) => {
+        const n = noteValue(v);
+        if (n !== null && n !== undefined && !eventTie(v)) notes.push({ n, pi, s });
+      }));
+      return { first: notes[0] || null, last: notes[notes.length - 1] || null };
+    }
+
+    function scoreMelody(patterns) {
+      const notes = allLeadNotes(patterns);
+      if (notes.length < 4) return 18;
+      const pitches = notes.map(x => x.n);
+      const range = Math.max(...pitches) - Math.min(...pitches);
+      const density = channelDensity(patterns, "lead");
+      const leaps = [];
+      for (let i = 1; i < pitches.length; i++) leaps.push(Math.abs(pitches[i] - pitches[i - 1]));
+      const avgLeap = leaps.reduce((a, b) => a + b, 0) / Math.max(1, leaps.length);
+      const bigLeapRatio = leaps.filter(x => x > 9).length / Math.max(1, leaps.length);
+      const strongBeatNotes = notes.filter(x => x.s % 4 === 0).length / Math.max(1, patterns.length * 4);
+      const repeatedPitchRatio = 1 - (new Set(pitches).size / Math.max(1, pitches.length));
+      const densityScore = 1 - Math.min(1, Math.abs(density - 0.48) / 0.48);
+      const rangeScore = range >= 5 && range <= 24 ? 1 : range < 5 ? range / 5 : Math.max(0, 1 - (range - 24) / 18);
+      const leapScore = Math.max(0, 1 - Math.abs(avgLeap - 4.2) / 7) * (1 - bigLeapRatio * 0.75);
+      const cadence = firstLastNote(patterns, "lead");
+      const cadenceDist = cadence.first && cadence.last ? Math.abs(cadence.first.n - cadence.last.n) % 12 : 12;
+      const cadenceScore = [0, 5, 7].includes(cadenceDist) ? 1 : Math.max(0, 1 - cadenceDist / 12);
+      const motifScore = clamp(repeatedPitchRatio * 1.7, 0, 1);
+      return Math.round(100 * (densityScore * 0.18 + rangeScore * 0.16 + leapScore * 0.22 + strongBeatNotes * 0.12 + cadenceScore * 0.16 + motifScore * 0.16));
+    }
+
+    function scoreLoop(patterns) {
+      if (!patterns.length) return 0;
+      const lead = firstLastNote(patterns, "lead");
+      const bass = firstLastNote(patterns, "bass");
+      const leadDist = lead.first && lead.last ? Math.abs(lead.first.n - lead.last.n) % 12 : 12;
+      const bassDist = bass.first && bass.last ? Math.abs(bass.first.n - bass.last.n) % 12 : 12;
+      const leadScore = [0, 2, 5, 7].includes(leadDist) ? 1 : Math.max(0, 1 - leadDist / 12);
+      const bassScore = [0, 5, 7].includes(bassDist) ? 1 : Math.max(0, 1 - bassDist / 12);
+      const firstEnergy = patternEnergy(patterns[0]);
+      const lastEnergy = patternEnergy(patterns[patterns.length - 1]);
+      const energyScore = Math.max(0, 1 - Math.abs(firstEnergy - lastEnergy) / 0.65);
+      const endDrum = patterns[patterns.length - 1].drum.slice(12).filter(drumValue).length;
+      const startDrum = patterns[0].drum.slice(0, 4).filter(drumValue).length;
+      const turnaroundScore = endDrum >= 1 && startDrum >= 1 ? 1 : 0.58;
+      return Math.round(100 * (leadScore * 0.28 + bassScore * 0.26 + energyScore * 0.28 + turnaroundScore * 0.18));
+    }
+
+    function patternEnergy(pattern) {
+      const lead = pattern.lead.filter(v => noteValue(v) !== null && noteValue(v) !== undefined && !eventTie(v)).length / 16;
+      const bass = pattern.bass.filter(v => noteValue(v) !== null && noteValue(v) !== undefined && !eventTie(v)).length / 16;
+      const arp = pattern.arp.filter(v => noteValue(v) !== null && noteValue(v) !== undefined && !eventTie(v)).length / 16;
+      const drum = pattern.drum.filter(drumValue).length / 16;
+      return lead * 0.35 + bass * 0.2 + arp * 0.2 + drum * 0.25;
+    }
+
+    function scoreGroove(patterns) {
+      const drumDensity = channelDensity(patterns, "drum");
+      const bassDensity = channelDensity(patterns, "bass");
+      const arpDensity = channelDensity(patterns, "arp");
+      let kickOnOne = 0, snareBackbeat = 0, hatMotion = 0, totalBars = 0;
+      patterns.forEach(p => {
+        totalBars += 4;
+        [0, 4, 8, 12].forEach(s => { if (drumValue(p.drum[s]) === "K") kickOnOne++; });
+        [4, 12].forEach(s => { if (drumValue(p.drum[s]) === "S") snareBackbeat++; });
+        p.drum.forEach((v, s) => { if (drumValue(v) === "H" && s % 2 === 0) hatMotion++; });
+      });
+      const densityScore = 1 - Math.min(1, Math.abs(drumDensity - 0.42) / 0.42);
+      const bassScore = 1 - Math.min(1, Math.abs(bassDensity - 0.22) / 0.35);
+      const arpScore = 1 - Math.min(1, Math.abs(arpDensity - 0.38) / 0.48);
+      const beatScore = clamp((kickOnOne / Math.max(1, totalBars)) * 1.5, 0, 1);
+      const snareScore = clamp((snareBackbeat / Math.max(1, patterns.length * 2)) * 1.2, 0, 1);
+      const hatScore = clamp(hatMotion / Math.max(1, patterns.length * 5), 0, 1);
+      return Math.round(100 * (densityScore * 0.22 + bassScore * 0.16 + arpScore * 0.12 + beatScore * 0.2 + snareScore * 0.18 + hatScore * 0.12));
+    }
+
+    function scoreCandidate(patterns) {
+      const melody = scoreMelody(patterns);
+      const loop = scoreLoop(patterns);
+      const groove = scoreGroove(patterns);
+      const total = Math.round(melody * 0.45 + loop * 0.3 + groove * 0.25);
+      return { total, melody, loop, groove };
+    }
+
+    function compositionReview(patterns, score = scoreCandidate(patterns)) {
+      const keep = [];
+      const fix = [];
+      const recommendedLocks = [];
+      let primaryAction = { type: "none", target: "unlocked", scope: "current", patternIndex: currentPatternIndex };
+
+      const leadDensity = channelDensity(patterns, "lead");
+      const bassDensity = channelDensity(patterns, "bass");
+      const drumDensity = channelDensity(patterns, "drum");
+      const arpDensity = channelDensity(patterns, "arp");
+      const lastIndex = Math.max(0, patterns.length - 1);
+
+      if (score.melody >= 74 && leadDensity > 0.18) {
+        keep.push("Lead 선율이 비교적 안정적입니다. 멜로디를 보존하는 것이 좋습니다.");
+        recommendedLocks.push("lead");
+      } else if (score.melody < 62) {
+        fix.push("Lead 선율이 약하거나 산만합니다. Lead만 다시 생성하거나 현재 패턴을 보정하세요.");
+        primaryAction = { type: "reroll", target: "lead", scope: "current", patternIndex: findWeakPatternIndex("lead") };
+      }
+
+      if (score.groove >= 72 && drumDensity > 0.18) {
+        keep.push("Drum 그루브가 루프를 잘 받쳐줍니다. 리듬은 잠그는 것을 추천합니다.");
+        recommendedLocks.push("drum");
+      } else if (score.groove < 62) {
+        fix.push("리듬 추진력이 약합니다. Drum 중심으로 다시 생성해보세요.");
+        primaryAction = { type: "reroll", target: "drum", scope: "current", patternIndex: findWeakPatternIndex("drum") };
+      }
+
+      if (bassDensity >= 0.12 && bassDensity <= 0.42 && score.loop >= 68) {
+        keep.push("Bass가 루프 안정감에 도움을 줍니다. 필요하면 Bass도 보존하세요.");
+        if (score.loop >= 78) recommendedLocks.push("bass");
+      }
+
+      if (arpDensity > 0.52) fix.push("Arp가 다소 촘촘할 수 있습니다. 귀가 피곤하면 Arp를 덜어내세요.");
+      if (score.loop < 68) {
+        fix.push("루프 연결이 약합니다. 마지막 패턴의 끝마디를 보정하는 것이 좋습니다.");
+        primaryAction = { type: "loop", target: "unlocked", scope: "current", patternIndex: lastIndex };
+      }
+      if (!keep.length) keep.push("아직 확실히 보존할 채널이 없습니다. 20 Takes로 후보를 더 뽑아보세요.");
+      if (!fix.length) fix.push("큰 문제는 없습니다. Point Control로 취향에 맞게 강조/완화하면 됩니다.");
+
+      const badge = score.total >= 82 ? "보존 추천" : score.total >= 68 ? "다듬기 좋음" : "보정 필요";
+      const summary = score.total >= 82
+        ? "현재 루프는 전체적으로 안정적입니다. 마음에 드는 채널을 잠그고 작은 포인트만 다듬어도 좋습니다."
+        : score.total >= 68
+          ? "기본 아이디어는 괜찮습니다. 좋은 채널은 잠그고 약한 부분만 고치면 완성도가 올라갑니다."
+          : "아직 루프의 중심이 약합니다. 추천 보정이나 20 Takes를 통해 더 좋은 후보를 찾는 것이 좋습니다.";
+
+      return {
+        score,
+        badge,
+        summary,
+        keep,
+        fix,
+        recommendedLocks: [...new Set(recommendedLocks)],
+        primaryAction
+      };
+    }
+
+    function renderReview(review) {
+      latestReview = review;
+      if (!review || !els.reviewSummary) return;
+      els.reviewBadge.textContent = review.badge;
+      els.reviewSummary.textContent = review.summary;
+      els.reviewKeep.innerHTML = review.keep.map(item => `<li>${item}</li>`).join("");
+      els.reviewFix.innerHTML = review.fix.map(item => `<li>${item}</li>`).join("");
+    }
+
+    function renderScore(score) {
+      if (!score) return;
+      els.scoreTotal.textContent = `${score.total} / 100`;
+      els.melodyScore.textContent = score.melody;
+      els.loopScore.textContent = score.loop;
+      els.grooveScore.textContent = score.groove;
+      renderReview(compositionReview(song, score));
+    }
+
+    function describeScore(score) {
+      const parts = [];
+      if (score.melody >= 78) parts.push("멜로디 안정적");
+      else if (score.melody < 55) parts.push("멜로디 보정 필요");
+      if (score.loop >= 78) parts.push("루프 자연스러움");
+      else if (score.loop < 55) parts.push("루프 연결 약함");
+      if (score.groove >= 76) parts.push("그루브 양호");
+      else if (score.groove < 55) parts.push("리듬 보강 필요");
+      return parts.join(" · ") || "균형형 후보";
+    }
+
+    function renderTakes() {
+      if (!takeResults.length) return;
+      els.takeList.innerHTML = "";
+      takeResults.slice(0, 3).forEach((take, idx) => {
+        const item = document.createElement("div");
+        item.className = "take-item";
+        item.innerHTML = `
+          <div class="take-rank">#${idx + 1}</div>
+          <div class="take-desc">
+            <strong>${take.score.total}점 · ${take.seed}</strong>
+            <span>Melody ${take.score.melody} / Loop ${take.score.loop} / Groove ${take.score.groove}<br>${describeScore(take.score)}</span>
+          </div>
+          <div style="display:grid;gap:6px;">
+            <button class="secondary" data-action="apply">적용</button>
+            <button class="secondary" data-action="fav">★</button>
+          </div>
+        `;
+        item.querySelector('[data-action="apply"]').onclick = () => applyTake(idx);
+        item.querySelector('[data-action="fav"]').onclick = () => favoriteSnapshot(snapshotFromTake(take, idx), `Best Take #${idx + 1} · ${take.score.total}점`);
+        els.takeList.appendChild(item);
+      });
+    }
+
+    function applyTake(index) {
+      const take = takeResults[index];
+      if (!take) return;
+      pushHistory(`Best Take #${index + 1} 적용 전`);
+      stop(false);
+      els.seed.value = take.seed;
+      motifContext = JSON.parse(JSON.stringify(take.motif));
+      song = cloneSongData(take.patterns);
+      currentPatternIndex = 0;
+      currentStep = 0;
+      render();
+      renderScore(take.score);
+      setStatus(`Best Take #${index + 1} 적용 완료 · 총점 ${take.score.total}점`);
+    }
+
+    function scoreCurrentSong() {
+      const score = scoreCandidate(song);
+      renderScore(score);
+      const review = latestReview || compositionReview(song, score);
+      const locksText = review.recommendedLocks.length ? ` · 추천 잠금: ${review.recommendedLocks.map(x => x.toUpperCase()).join("/")}` : "";
+      setStatus(`현재 곡 평가 완료 · 총점 ${score.total}점 · Melody ${score.melody} / Loop ${score.loop} / Groove ${score.groove}${locksText}`);
+      return score;
+    }
+
+    function applyReviewRecommendedLocks() {
+      const review = latestReview || compositionReview(song);
+      if (!review.recommendedLocks.length) {
+        setStatus("추천할 잠금 채널이 아직 없습니다. 20 Takes를 생성하거나 현재 곡을 더 다듬어보세요.", "warn");
+        return;
+      }
+      pushHistory("추천 잠금 적용 전");
+      review.recommendedLocks.forEach(channel => { locks[channel] = true; });
+      updateLockUi();
+      setStatus(`추천대로 잠금 적용: ${review.recommendedLocks.map(x => x.toUpperCase()).join("/")}`);
+    }
+
+    function fixReviewRecommendedTarget() {
+      const review = latestReview || compositionReview(song);
+      const action = review.primaryAction;
+      if (!action || action.type === "none") {
+        setStatus("현재 곡에는 자동 보정할 뚜렷한 약점이 없습니다. Point Control로 취향 조정만 해도 좋습니다.");
+        return;
+      }
+      if (action.type === "loop") {
+        improveLoopEnding();
+        return;
+      }
+      currentPatternIndex = clamp(action.patternIndex ?? currentPatternIndex, 0, Math.max(0, song.length - 1));
+      if (els.fixScope) els.fixScope.value = action.scope || "current";
+      if (els.fixTarget) els.fixTarget.value = action.target || "unlocked";
+      regenerateUnlocked();
+    }
+
+    function improveLoopEnding() {
+      if (!song.length) return;
+      pushHistory("루프 끝 보정 전");
+      const lastIndex = song.length - 1;
+      const first = song[0];
+      const last = song[lastIndex];
+      currentPatternIndex = lastIndex;
+
+      const firstLead = firstLastNote([first], "lead").first;
+      const firstBass = firstLastNote([first], "bass").first;
+      const leadTarget = firstLead?.n ?? noteFromDegree(rootMidi(), SCALES[els.scale.value], 0, 1);
+      const bassTarget = firstBass?.n ?? noteFromDegree(rootMidi() - 12, SCALES[els.scale.value], 0, -1);
+
+      if (!locks.lead) {
+        last.lead[14] = makeNote(leadTarget - 2, 1, 0.78, false, 0);
+        last.lead[15] = makeNote(leadTarget, 1, 0.96, false, 0);
+        normalizeTies(last, "lead");
+      }
+      if (!locks.bass) {
+        last.bass[12] = makeNote(bassTarget, 2, 0.88, false, 0);
+        last.bass[15] = makeNote(bassTarget, 1, 0.72, false, 0);
+        normalizeTies(last, "bass");
+      }
+      if (!locks.drum) {
+        last.drum[12] = last.drum[12] || makeDrum("S", 0.8);
+        last.drum[14] = makeDrum("H", 0.78);
+        last.drum[15] = makeDrum("K", 0.96);
+      }
+      if (!locks.arp) {
+        last.arp[14] = makeNote(leadTarget + 7, 0.5, 0.55, false, 0);
+        last.arp[15] = null;
+        normalizeTies(last, "arp");
+      }
+
+      selectedPoint = { pattern: lastIndex, step: 15, channel: "all" };
+      render();
+      const score = scoreCurrentSong();
+      setStatus(`루프 끝 보정 완료 · 마지막 패턴을 첫 패턴으로 자연스럽게 연결했습니다. 총점 ${score.total}점`);
+    }
+
+    function generateBestTakes() {
+      stop(false);
+      const originalSeed = els.seed.value || "MCT";
+      const currentSnapshot = { seed: els.seed.value, motif: motifContext, patterns: cloneSongData(song) };
+      const candidates = [];
+      for (let i = 0; i < 20; i++) {
+        const seed = `${originalSeed}-TAKE-${String(i + 1).padStart(2, "0")}-${hashString(originalSeed + "|" + i).toString(36)}`;
+        const built = buildSongForSeed(seed);
+        const score = scoreCandidate(built.patterns);
+        candidates.push({ ...built, score });
+      }
+      takeResults = candidates.sort((a, b) => b.score.total - a.score.total);
+      els.seed.value = currentSnapshot.seed;
+      motifContext = currentSnapshot.motif;
+      song = currentSnapshot.patterns;
+      currentPatternIndex = 0;
+      currentStep = 0;
+      render();
+      renderTakes();
+      renderScore(takeResults[0].score);
+      setStatus(`20 Takes 평가 완료 · Best #1 ${takeResults[0].score.total}점 / #2 ${takeResults[1].score.total}점 / #3 ${takeResults[2].score.total}점`);
+    }
+
+    function quickFindBestLoop() {
+      generateBestTakes();
+      if (takeResults[0]) {
+        applyTake(0);
+        setStatus(`좋은 루프 찾기 완료 · Best #1 ${takeResults[0].score.total}점 후보를 자동 적용했습니다. 마음에 들면 ★ 마음에 들어요를 누르세요.`);
+      }
+    }
+
+    function createMotifContext() {
+      const seedBase = hashString(`${els.seed.value}|motif|${els.mood.value}|${els.scale.value}|${els.chordProgression.value}`);
+      const rng = mulberry32(seedBase);
+      const steps = 8;
+      const rhythm = Array(steps).fill(false);
+      const degrees = Array(steps).fill(null);
+      const baseDegree = Math.floor(rng() * 3);
+      let degree = baseDegree;
+
+      const densityBias = els.motifMode.value === "strong" ? 0.82 : els.motifMode.value === "balanced" ? 0.68 : 0.54;
+      for (let i = 0; i < steps; i++) {
+        const strongBeat = i === 0 || i === 4;
+        const answerBeat = i === 2 || i === 6;
+        rhythm[i] = strongBeat || answerBeat || rng() < densityBias;
+        if (rhythm[i]) {
+          if (i === 0) degree = baseDegree;
+          else if (i === 4) degree = baseDegree + choice(rng, [2, 4, 5]);
+          else degree += choice(rng, [-2, -1, 0, 1, 2]);
+          degrees[i] = clamp(degree, -1, 8);
+        }
+      }
+      return { seed: seedBase, rhythm, degrees };
+    }
+
+    function transformMotifDegree(baseDegree, role, step, patternIndex, chord) {
+      if (baseDegree === null || baseDegree === undefined) return null;
+      let degree = baseDegree;
+      if (["A'", "Mid", "Run+"].includes(role) && step >= 4) degree += 1;
+      if (["B", "High"].includes(role)) degree = chord[(step / 2 | 0) % chord.length] + ((step % 4 === 0) ? 0 : 2);
+      if (["Build", "Sprint"].includes(role)) degree += Math.floor(step / 4) + 1;
+      if (role === "Peak") degree += step < 8 ? 3 : 5;
+      if (["Resolve", "Finish", "Outro"].includes(role)) degree = step < 8 ? Math.round((degree + chord[0]) / 2) : chord[0];
+      if (["Intro", "Low", "Warm", "Break"].includes(role) && step % 2 === 1) return null;
+      return clamp(degree, -2, 11);
+    }
+
+    function motifShouldPlay(role, motifRhythm, step, rng, localDensity) {
+      const motifHit = motifRhythm[step % motifRhythm.length];
+      if (["Intro", "Low", "Warm"].includes(role)) return motifHit && step % 2 === 0;
+      if (role === "Break") return motifHit && step % 4 === 0;
+      if (["Build", "Sprint", "Peak"].includes(role)) return motifHit || rng() < localDensity * 0.45;
+      if (els.motifMode.value === "loose") return motifHit || rng() < localDensity * 0.28;
+      return motifHit || rng() < localDensity * 0.18;
+    }
+
+    function makePattern(index, context = motifContext) {
+      const seedBase = hashString(`${els.seed.value}|${index}|${els.scale.value}|${els.formula.value}|${els.mood.value}|${els.chordProgression.value}|${els.songStructure.value}|${els.motifMode.value}`);
+      const rng = mulberry32(seedBase);
+      const base = rootMidi();
+      const scale = SCALES[els.scale.value];
+      const density = Number(els.density.value) / 100;
+      const variation = Number(els.variation.value) / 100;
+      const formula = els.formula.value;
+      const progression = PROGRESSIONS[els.chordProgression.value] || PROGRESSIONS.pop;
+      const role = getStructureRoles()[index % getStructureRoles().length];
+      const energy = roleEnergy(role);
+      const localDensity = clamp(density * energy, 0.08, 0.98);
+      const localVariation = clamp(variation * (0.7 + energy * 0.45), 0.05, 1.2);
+      const chordDegree = progression[index % progression.length];
+      const chord = [chordDegree, chordDegree + 2, chordDegree + 4];
+      const lead = Array(16).fill(null);
+      const bass = Array(16).fill(null);
+      const arp = Array(16).fill(null);
+      const drum = Array(16).fill(null);
+
+      let walk = chordDegree + Math.floor(rng() * 3);
+      const rhythm = formula === "euclid" ? euclid(16, 5 + Math.floor(rng() * 6), Math.floor(rng() * 8)) : euclid(16, 6 + Math.floor(rng() * 4), Math.floor(rng() * 8));
+      const cell = formula === "cellular" ? cellularBits(seedBase, 16) : null;
+      const motifActive = els.motifMode.value !== "off" && context?.degrees?.length;
+
+      for (let s = 0; s < 16; s++) {
+        const barPos = s % 4;
+        const isBuildOrPeak = ["Build", "Sprint", "Peak", "High"].includes(role);
+        const isLowEnergy = ["Intro", "Low", "Warm", "Break", "Outro"].includes(role);
+
+        if (s % 4 === 0 && role !== "Break") bass[s] = noteFromDegree(base - 12, scale, chordDegree, -1);
+        if ((s === 6 || s === 14) && rng() < 0.32 + localVariation * 0.46 && !isLowEnergy) bass[s] = noteFromDegree(base - 12, scale, chordDegree + 4, -1);
+        if ((els.mood.value === "running" || isBuildOrPeak) && [2,8,10].includes(s) && role !== "Break") bass[s] = noteFromDegree(base - 12, scale, chordDegree, -1);
+
+        if ((s % 2 === 0 || rng() < 0.18 + localVariation * 0.24) && role !== "Break") {
+          const d = chord[(s / 2 | 0) % chord.length];
+          const octaveBoost = isBuildOrPeak && s >= 8 ? 2 : 1;
+          arp[s] = noteFromDegree(base, scale, d, octaveBoost);
+        }
+
+        if (motifActive) {
+          const mStep = s % context.degrees.length;
+          const shouldPlay = motifShouldPlay(role, context.rhythm, s, rng, localDensity);
+          if (shouldPlay) {
+            const transformed = transformMotifDegree(context.degrees[mStep], role, s, index, chord);
+            if (transformed !== null) {
+              const octave = isBuildOrPeak && s >= 8 ? 2 : 1;
+              lead[s] = noteFromDegree(base, scale, transformed + chordDegree, octave);
+            }
+          }
+        } else {
+          let shouldPlay = rng() < localDensity;
+          if (formula === "euclid") shouldPlay = rhythm[s];
+          if (formula === "cellular") shouldPlay = cell[s] || (barPos === 0 && rng() < 0.42);
+
+          if (shouldPlay) {
+            if (formula === "sine") {
+              const wave = Math.sin((s + index * 3) / 16 * Math.PI * 2);
+              walk = chordDegree + Math.round((wave + 1) * 3) + Math.floor(rng() * 2);
+            } else {
+              const jumps = els.mood.value === "anger" ? [-3,-2,-1,0,1,2,4] : [-2,-1,0,1,2];
+              walk += choice(rng, jumps);
+              walk = clamp(walk, chordDegree - 1, chordDegree + 8);
+            }
+            if (barPos === 0 && rng() < 0.72) walk = choice(rng, chord);
+            lead[s] = noteFromDegree(base, scale, walk, 1 + (rng() < 0.16 + localVariation * 0.1 ? 1 : 0));
+          }
+        }
+
+        drum[s] = makeDrumStep(els.drumPattern.value, s, rng, localVariation, rhythm);
+        if (isLowEnergy && drum[s] === "H" && rng() < 0.55) drum[s] = null;
+        if (role === "Break" && ![0, 12].includes(s)) drum[s] = null;
+        if (role === "Peak" && s % 2 === 0 && !drum[s]) drum[s] = "H";
+        if (role === "Build" && s >= 12 && !drum[s]) drum[s] = "H";
+      }
+
+      return applyArticulation({ id: index + 1, role, seed: seedBase, lead, bass, arp, drum }, role, rng);
+    }
+
+    function generateSong(saveHistory = true) {
+      if (saveHistory) pushHistory("새 곡 생성 전");
+      stop(false);
+      motifContext = createMotifContext();
+      const roles = getStructureRoles();
+      song = roles.map((_, i) => makePattern(i, motifContext));
+      currentPatternIndex = 0;
+      currentStep = 0;
+      render();
+      setStatus(`새 곡 생성 완료 · ${song.length}개 패턴 · ${els.bpm.value} BPM · ${els.mood.options[els.mood.selectedIndex].text} · ${els.motifMode.options[els.motifMode.selectedIndex].text}`);
+    }
+
+    function appendPattern() {
+      pushHistory("패턴 추가 전");
+      if (!motifContext) motifContext = createMotifContext();
+      song.push(makePattern(song.length, motifContext));
+      render();
+      setStatus(`패턴 ${song.length}번을 뒤에 이어붙였습니다. 모티프가 유지된 변형 패턴입니다.`);
+    }
+
+    function duplicatePattern() {
+      pushHistory("패턴 복제 전");
+      if (!song.length) generateSong(false);
+      const copy = JSON.parse(JSON.stringify(song[currentPatternIndex]));
+      copy.id = song.length + 1;
+      song.splice(currentPatternIndex + 1, 0, copy);
+      currentPatternIndex += 1;
+      song.forEach((p, i) => p.id = i + 1);
+      render();
+      setStatus(`현재 패턴을 복제했습니다. P${String(currentPatternIndex + 1).padStart(2, "0")}`);
+    }
+
+    function setStatus(msg, kind = "") {
+      els.status.textContent = msg;
+      els.status.className = `status ${kind}`.trim();
+    }
+
+    function render() {
+      renderSongbar();
+      renderTimeline();
+      renderSteps();
+      renderPattern(song[currentPatternIndex] || makePattern(0));
+      updateLockUi();
+    }
+
+    function renderTimeline() {
+      if (!els.timeline) return;
+      els.timeline.innerHTML = "";
+      song.forEach((pattern, index) => {
+        const energy = clamp(patternEnergy(pattern), 0, 1);
+        const score = scoreCandidate([pattern]);
+        const seg = document.createElement("div");
+        seg.className = "timeline-seg" + (index === currentPatternIndex ? " active" : "");
+        seg.innerHTML = `
+          <div class="energy-bar"><i style="height:${Math.max(8, Math.round(energy * 100))}%"></i></div>
+          <strong>P${String(index + 1).padStart(2, "0")} · ${pattern.role || "Part"}</strong>
+          <span>${score.total}점 · Energy ${Math.round(energy * 100)}</span>
+        `;
+        seg.onclick = () => {
+          currentPatternIndex = index;
+          currentStep = 0;
+          selectedPoint = { pattern: index, step: 0, channel: "all" };
+          render();
+        };
+        els.timeline.appendChild(seg);
+      });
+    }
+
+    function renderSteps() {
+      els.steps.innerHTML = "";
+      const left = document.createElement("div");
+      left.className = "step-label";
+      left.textContent = "STEP";
+      els.steps.appendChild(left);
+      for (let i = 0; i < 16; i++) {
+        const n = document.createElement("div");
+        n.className = "step-num" + (selectedPoint.step === i && selectedPoint.pattern === currentPatternIndex ? " selected" : "");
+        n.textContent = String(i + 1).padStart(2, "0");
+        n.onclick = () => setSelectedPoint(currentPatternIndex, i, els.pointTarget?.value || "all");
+        els.steps.appendChild(n);
+      }
+    }
+
+    function renderSongbar() {
+      els.songbar.innerHTML = "";
+      song.forEach((p, idx) => {
+        const el = document.createElement("button");
+        el.className = "pat" + (idx === currentPatternIndex ? " active" : "");
+        el.textContent = `P${String(idx + 1).padStart(2, "0")}${p.role ? " · " + p.role : ""}`;
+        el.onclick = () => {
+          currentPatternIndex = idx;
+          currentStep = 0;
+          render();
+        };
+        els.songbar.appendChild(el);
+      });
+    }
+
+    function renderPattern(pattern) {
+      els.channels.innerHTML = "";
+      activeCells = [];
+      const rows = [
+        ["LEAD", "lead"],
+        ["BASS", "bass"],
+        ["ARP", "arp"],
+        ["DRUM", "drum"]
+      ];
+      rows.forEach(([label, key]) => {
+        const row = document.createElement("div");
+        row.className = "channel";
+        const name = document.createElement("div");
+        name.className = "ch-name";
+        name.textContent = label;
+        row.appendChild(name);
+
+        for (let i = 0; i < 16; i++) {
+          const cell = document.createElement("div");
+          const v = pattern[key][i];
+          const n = key === "drum" ? null : noteValue(v);
+          const d = key === "drum" ? drumValue(v) : null;
+          const has = key === "drum" ? !!d : (n !== null && n !== undefined);
+          const vel = eventVel(v);
+          const len = eventLen(v);
+          cell.className = "cell" + (has ? (key === "drum" ? " drum" : " note") : "") + (eventTie(v) ? " tie" : "") + (i % 4 === 0 ? " barline" : "") + (vel < 0.65 ? " velocity-low" : vel > 1.05 ? " velocity-high" : "") + (selectedPoint.pattern === currentPatternIndex && selectedPoint.step === i && (selectedPoint.channel === "all" || selectedPoint.channel === key) ? " selected" : "");
+          if (key === "drum") {
+            cell.innerHTML = d ? `${d}<span class="meta">${Math.round(vel * 100)}</span>` : "·";
+          } else if (eventTie(v)) {
+            cell.innerHTML = `↔<span class="meta">tie</span>`;
+          } else if (has) {
+            const lenLabel = len >= 2 ? `×${Math.round(len)}` : len < 1 ? `.${Math.round(len * 100)}` : "";
+            cell.innerHTML = `${midiToName(n)}<span class="meta">${lenLabel || Math.round(vel * 100)}</span>`;
+          } else {
+            cell.textContent = "·";
+          }
+          cell.dataset.step = i;
+          cell.dataset.channel = key;
+          cell.title = key === "drum" ? `${label} step ${i + 1}` : `음정:${has ? midiToName(n) : "쉼표"} 길이:${len} 세기:${Math.round(vel * 100)}${eventTie(v) ? " 타이" : ""}`;
+          cell.onclick = (ev) => {
+            setSelectedPoint(currentPatternIndex, i, key, false);
+            if (els.editMode.value !== "select") editCell(key, i, ev.shiftKey ? -1 : 1);
+            else {
+              renderPattern(song[currentPatternIndex]);
+              setStatus(`선택됨: P${currentPatternIndex + 1} · ${key.toUpperCase()} · Step ${i + 1}. 더블클릭하거나 편집 모드를 바꾸면 수정됩니다.`);
+            }
+          };
+          cell.ondblclick = (ev) => {
+            ev.preventDefault();
+            editCell(key, i, ev.shiftKey ? -1 : 1);
+          };
+          cell.oncontextmenu = (ev) => {
+            ev.preventDefault();
+            pushHistory(`쉼표 처리 전 · P${currentPatternIndex + 1} ${key.toUpperCase()} ${i + 1}`);
+            song[currentPatternIndex][key][i] = null;
+            if (key !== "drum") normalizeTies(song[currentPatternIndex], key);
+            renderPattern(song[currentPatternIndex]);
+          };
+          row.appendChild(cell);
+          activeCells.push(cell);
+        }
+        els.channels.appendChild(row);
+      });
+      updateStudioInfo();
+    }
+
+    function editCell(channel, step, dir) {
+      const pattern = song[currentPatternIndex];
+      if (!pattern) return;
+      pushHistory(`그리드 수정 전 · P${currentPatternIndex + 1} ${channel.toUpperCase()} ${step + 1}`);
+      const mode = els.editMode?.value || "pitch";
+      const current = pattern[channel][step];
+
+      if (channel === "drum") {
+        const d = drumValue(current);
+        if (mode === "velocity") {
+          const nextD = d || "K";
+          const idx = VELOCITY_STEPS.findIndex(v => v > eventVel(current));
+          const vel = VELOCITY_STEPS[(idx < 0 ? 0 : idx) % VELOCITY_STEPS.length];
+          pattern[channel][step] = makeDrum(nextD, vel, eventOff(current));
+        } else {
+          const order = [null, "K", "S", "H"];
+          const idx = order.indexOf(d);
+          const next = order[(idx + dir + order.length) % order.length];
+          pattern[channel][step] = next ? makeDrum(next, eventVel(current), eventOff(current)) : null;
+        }
+      } else {
+        if (mode === "tie") {
+          if (eventTie(current)) pattern[channel][step] = null;
+          else if (noteValue(current) !== null && noteValue(current) !== undefined) {
+            pattern[channel][step] = makeNote(noteValue(current), clamp(Math.round(eventLen(current)) + dir, 1, 4), eventVel(current), false, eventOff(current));
+          } else if (step > 0 && noteValue(pattern[channel][step - 1]) !== null && noteValue(pattern[channel][step - 1]) !== undefined) {
+            const prev = pattern[channel][step - 1];
+            pattern[channel][step] = makeNote(noteValue(prev), 0, eventVel(prev), true, 0);
+          }
+          normalizeTies(pattern, channel);
+        } else if (mode === "length") {
+          const n = noteValue(current);
+          if (n !== null && n !== undefined && !eventTie(current)) {
+            const order = [0.5, 0.75, 1, 2, 3, 4];
+            const curLen = eventLen(current);
+            let idx = order.findIndex(v => v >= curLen - 0.01);
+            if (idx < 0) idx = 2;
+            const nextLen = order[(idx + dir + order.length) % order.length];
+            pattern[channel][step] = makeNote(n, nextLen, eventVel(current), false, eventOff(current));
+            normalizeTies(pattern, channel);
+          }
+        } else if (mode === "velocity") {
+          const n = noteValue(current);
+          if (n !== null && n !== undefined && !eventTie(current)) {
+            const idx = VELOCITY_STEPS.findIndex(v => v > eventVel(current));
+            const vel = VELOCITY_STEPS[(idx < 0 ? 0 : idx) % VELOCITY_STEPS.length];
+            pattern[channel][step] = makeNote(n, eventLen(current), vel, false, eventOff(current));
+          }
+        } else {
+          const pool = [null, ...notePool(channel)];
+          const n = eventTie(current) ? null : noteValue(current);
+          const idx = pool.indexOf(n);
+          const next = pool[(idx + dir + pool.length) % pool.length];
+          pattern[channel][step] = next === null ? null : makeNote(next, Math.max(1, eventLen(current)), eventVel(current), false, eventOff(current));
+          normalizeTies(pattern, channel);
+        }
+      }
+      renderPattern(pattern);
+      setStatus(`수정됨: P${currentPatternIndex + 1} · ${channel.toUpperCase()} · Step ${step + 1} · ${els.editMode.options[els.editMode.selectedIndex].text}`);
+    }
+
+    function updateStudioInfo() {
+      if (!els.articulationInfo) return;
+      els.articulationInfo.textContent = els.lengthPreset?.options[els.lengthPreset.selectedIndex]?.textContent || "Mixed";
+      els.velocityInfo.textContent = els.velocityPreset?.options[els.velocityPreset.selectedIndex]?.textContent || "Human";
+      els.arcInfo.textContent = els.songStructure?.options[els.songStructure.selectedIndex]?.textContent.split(" /")[0] || "A-A′-B-A";
+      els.editInfo.textContent = els.editMode?.options[els.editMode.selectedIndex]?.textContent || "음정 편집";
+    }
+
+    function instrumentConfig(channel) {
+      if (channel === "lead") return INSTRUMENTS.lead[els.leadInstrument.value] || INSTRUMENTS.lead.softSquare;
+      if (channel === "bass") return INSTRUMENTS.bass[els.bassInstrument.value] || INSTRUMENTS.bass.triangleBass;
+      if (channel === "arp") return INSTRUMENTS.arp[els.arpInstrument.value] || INSTRUMENTS.arp.thinArp;
+      return { wave: "square", vol: 0.16, attack: 0.01, release: 0.05, detune: 0 };
+    }
+
+    function ensureAudio() {
+      if (audioCtx) return;
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      master = audioCtx.createGain();
+      master.gain.value = 0.62;
+      filterNode = audioCtx.createBiquadFilter();
+      filterNode.type = "lowpass";
+      filterNode.frequency.value = 7200;
+      delayNode = audioCtx.createDelay(0.7);
+      delayNode.delayTime.value = els.mood.value === "space" ? 0.28 : 0.18;
+      delayGain = audioCtx.createGain();
+      delayGain.gain.value = els.mood.value === "space" ? 0.26 : 0.16;
+      delayNode.connect(delayGain);
+      delayGain.connect(delayNode);
+      delayGain.connect(filterNode);
+      filterNode.connect(master);
+      master.connect(audioCtx.destination);
+      recorderDest = audioCtx.createMediaStreamDestination();
+      master.connect(recorderDest);
+    }
+
+    function envGain(time, dur, peak, release = 0.04, attack = 0.01) {
+      const g = audioCtx.createGain();
+      g.gain.setValueAtTime(0.0001, time);
+      g.gain.exponentialRampToValueAtTime(Math.max(0.0002, peak), time + Math.max(0.002, attack));
+      g.gain.exponentialRampToValueAtTime(0.0001, time + dur + release);
+      return g;
+    }
+
+    function playTone(midi, channel, time, dur, vol) {
+      const cfg = instrumentConfig(channel);
+      const osc = audioCtx.createOscillator();
+      const g = envGain(time, dur, vol * cfg.vol, cfg.release, cfg.attack);
+      osc.type = cfg.wave;
+      osc.frequency.setValueAtTime(midiToFreq(midi), time);
+      osc.detune.setValueAtTime((cfg.detune || 0) + (els.mood.value === "anger" && channel === "lead" ? -7 : 0), time);
+      if (channel === "lead" && els.leadInstrument.value === "laserLead") {
+        osc.frequency.exponentialRampToValueAtTime(Math.max(60, midiToFreq(midi) * 0.72), time + Math.min(0.08, dur));
+      }
+      osc.connect(g);
+      g.connect(filterNode);
+      if (channel === "lead" || channel === "arp") g.connect(delayNode);
+      osc.start(time);
+      osc.stop(time + dur + 0.1);
+    }
+
+    function playKick(time, vol = 1) {
+      const kit = els.drumKit?.value || "classic";
+      const osc = audioCtx.createOscillator();
+      const g = envGain(time, kit === "hard" ? 0.16 : 0.12, (kit === "cute" ? 0.72 : kit === "hard" ? 1.08 : 0.9) * vol, 0.03);
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(kit === "cute" ? 120 : 150, time);
+      osc.frequency.exponentialRampToValueAtTime(kit === "hard" ? 36 : 42, time + 0.12);
+      osc.connect(g);
+      g.connect(filterNode);
+      osc.start(time);
+      osc.stop(time + 0.16);
+    }
+
+    function noiseBuffer() {
+      const buffer = audioCtx.createBuffer(1, audioCtx.sampleRate * 0.18, audioCtx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
+      return buffer;
+    }
+
+    function playSnare(time, vol = 1) {
+      const kit = els.drumKit?.value || "classic";
+      const src = audioCtx.createBufferSource();
+      const filter = audioCtx.createBiquadFilter();
+      const g = envGain(time, kit === "hard" ? 0.14 : 0.11, (kit === "cute" ? 0.32 : kit === "hard" ? 0.58 : 0.42) * vol, 0.03);
+      src.buffer = noiseBuffer();
+      filter.type = "bandpass";
+      filter.frequency.value = kit === "noise" ? 2400 : kit === "cute" ? 1350 : 1700;
+      filter.Q.value = 0.7;
+      src.connect(filter);
+      filter.connect(g);
+      g.connect(filterNode);
+      src.start(time);
+      src.stop(time + 0.16);
+    }
+
+    function playHat(time, vol = 1) {
+      const kit = els.drumKit?.value || "classic";
+      const src = audioCtx.createBufferSource();
+      const filter = audioCtx.createBiquadFilter();
+      const g = envGain(time, kit === "noise" ? 0.055 : 0.035, (kit === "cute" ? 0.12 : kit === "hard" ? 0.24 : 0.18) * vol, 0.02);
+      src.buffer = noiseBuffer();
+      filter.type = "highpass";
+      filter.frequency.value = kit === "noise" ? 4800 : 6200;
+      src.connect(filter);
+      filter.connect(g);
+      g.connect(filterNode);
+      src.start(time);
+      src.stop(time + 0.055);
+    }
+
+    function scheduleStep(patternIndex, step, time) {
+      const pattern = song[patternIndex];
+      if (!pattern) return;
+      const stepDur = (60 / Number(els.bpm.value)) / 4;
+      const scheduleNote = (v, type, baseVol) => {
+        const n = noteValue(v);
+        if (n === null || n === undefined || eventTie(v)) return;
+        const when = time + eventOff(v) * stepDur;
+        const dur = Math.max(0.035, stepDur * eventLen(v) * 0.88);
+        playTone(n, type, when, dur, baseVol * eventVel(v));
+      };
+      scheduleNote(pattern.lead[step], "lead", 1);
+      scheduleNote(pattern.bass[step], "bass", 1);
+      scheduleNote(pattern.arp[step], "arp", 1);
+      const d = drumValue(pattern.drum[step]);
+      const drumWhen = time + eventOff(pattern.drum[step]) * stepDur;
+      const drumVel = eventVel(pattern.drum[step]);
+      if (d === "K") playKick(drumWhen, drumVel);
+      if (d === "S") playSnare(drumWhen, drumVel);
+      if (d === "H") playHat(drumWhen, drumVel);
+
+      window.setTimeout(() => highlight(patternIndex, step), Math.max(0, (time - audioCtx.currentTime) * 1000));
+    }
+
+    function highlight(patternIndex, step) {
+      if (!isPlaying) return;
+      if (patternIndex !== currentPatternIndex) {
+        currentPatternIndex = patternIndex;
+        render();
+      }
+      selectedPoint = { pattern: patternIndex, step, channel: els.pointTarget?.value || "all" };
+      updatePointInfo();
+      activeCells.forEach(c => c.classList.toggle("playing", Number(c.dataset.step) === step));
+      const p = song[patternIndex];
+      els.meters.lead.style.width = noteValue(p.lead[step]) !== null && noteValue(p.lead[step]) !== undefined ? `${Math.round(eventVel(p.lead[step]) * 85)}%` : "7%";
+      els.meters.bass.style.width = noteValue(p.bass[step]) !== null && noteValue(p.bass[step]) !== undefined ? `${Math.round(eventVel(p.bass[step]) * 85)}%` : "7%";
+      els.meters.arp.style.width = noteValue(p.arp[step]) !== null && noteValue(p.arp[step]) !== undefined ? `${Math.round(eventVel(p.arp[step]) * 85)}%` : "7%";
+      els.meters.drum.style.width = drumValue(p.drum[step]) ? `${Math.round(eventVel(p.drum[step]) * 85)}%` : "7%";
+      renderSongbar();
+    }
+
+    function nextStep() {
+      const stepDur = (60 / Number(els.bpm.value)) / 4;
+      nextNoteTime += stepDur;
+      currentStep++;
+      if (currentStep >= 16) {
+        currentStep = 0;
+        currentPatternIndex = (currentPatternIndex + 1) % song.length;
+      }
+    }
+
+    function scheduler() {
+      while (nextNoteTime < audioCtx.currentTime + 0.12) {
+        scheduleStep(currentPatternIndex, currentStep, nextNoteTime);
+        nextStep();
+      }
+    }
+
+    async function play() {
+      if (!song.length) generateSong();
+      ensureAudio();
+      if (audioCtx.state === "suspended") await audioCtx.resume();
+      stop(false);
+      isPlaying = true;
+      currentStep = 0;
+      nextNoteTime = audioCtx.currentTime + 0.06;
+      timerId = window.setInterval(scheduler, 25);
+      setStatus("재생 중입니다. 패턴 체인이 끝나면 처음으로 루프됩니다.");
+    }
+
+    function stop(update = true) {
+      isPlaying = false;
+      if (timerId) window.clearInterval(timerId);
+      timerId = null;
+      activeCells.forEach(c => c.classList.remove("playing"));
+      Object.values(els.meters).forEach(m => m.style.width = "0%");
+      if (update) setStatus("정지했습니다.");
+    }
+
+    function exportObject() {
+      return {
+        format: "MCT-0.6",
+        createdAt: new Date().toISOString(),
+        mood: els.mood.value,
+        bpm: Number(els.bpm.value),
+        root: els.root.value,
+        scale: els.scale.value,
+        formula: els.formula.value,
+        drumPattern: els.drumPattern.value,
+        chordProgression: els.chordProgression.value,
+        songStructure: els.songStructure.value,
+        motifMode: els.motifMode.value,
+        lengthPreset: els.lengthPreset.value,
+        velocityPreset: els.velocityPreset.value,
+        swing: Number(els.swing.value),
+        humanize: Number(els.humanize.value),
+        leadInstrument: els.leadInstrument.value,
+        bassInstrument: els.bassInstrument.value,
+        arpInstrument: els.arpInstrument.value,
+        drumKit: els.drumKit.value,
+        motif: motifContext,
+        locks,
+        density: Number(els.density.value),
+        variation: Number(els.variation.value),
+        seed: els.seed.value,
+        patterns: song,
+        compareSlots,
+        favorites
+      };
+    }
+
+    function encodeMct(obj) {
+      return btoa(unescape(encodeURIComponent(JSON.stringify(obj))));
+    }
+
+    function decodeMct(base64) {
+      return JSON.parse(decodeURIComponent(escape(atob(base64.trim()))));
+    }
+
+    function exportData() {
+      const data = exportObject();
+      const json = JSON.stringify(data);
+      const base64 = encodeMct(data);
+      els.exportBox.value = base64;
+      setStatus(`MCT Export 완료 · JSON ${json.length.toLocaleString()}자 → Base64 ${base64.length.toLocaleString()}자`);
+      return base64;
+    }
+
+    function downloadMct() {
+      const data = exportObject();
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+      const a = document.createElement("a");
+      const safeSeed = els.seed.value.replace(/[^a-z0-9_-]/gi, "_");
+      a.href = URL.createObjectURL(blob);
+      a.download = `${safeSeed || "song"}.mct`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(a.href);
+      setStatus(".mct 파일로 저장했습니다.");
+    }
+
+    async function loadMct() {
+      const file = els.importFile.files?.[0];
+      if (!file) {
+        setStatus("불러올 .mct 파일을 먼저 선택하세요.");
+        return;
+      }
+      const text = await file.text();
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch {
+        data = decodeMct(text);
+      }
+      applyData(data);
+      setStatus(`불러오기 완료: ${file.name}`);
+    }
+
+    function applyData(data) {
+      pushHistory("파일 불러오기 전");
+      stop(false);
+      ["mood","root","scale","formula","drumPattern","chordProgression","songStructure","motifMode","lengthPreset","velocityPreset","leadInstrument","bassInstrument","arpInstrument","drumKit","seed"].forEach(k => {
+        if (data[k] !== undefined && els[k]) els[k].value = data[k];
+      });
+      ["bpm","density","variation","swing","humanize"].forEach(k => {
+        if (data[k] !== undefined && els[k]) els[k].value = data[k];
+      });
+      motifContext = data.motif || createMotifContext();
+      locks = data.locks || { lead: false, bass: false, arp: false, drum: false };
+      compareSlots = data.compareSlots || { a: null, b: null };
+      favorites = data.favorites || [];
+      song = data.patterns || [];
+      currentPatternIndex = 0;
+      currentStep = 0;
+      render();
+    }
+
+    function miniPlayerCode(base64) {
+      return `<!-- MCT v0.6 배경음악 플레이어: 버튼 클릭 후 재생됩니다. 본편의 악기 프리셋을 반영합니다. -->
+<button id="mctPlay" style="position:fixed;right:16px;bottom:16px;z-index:9999;border:0;border-radius:999px;padding:12px 14px;background:#7cf7c2;color:#07100d;font-weight:800;cursor:pointer">♫ BGM</button>
+<script>
+(()=>{const DATA="${base64}";const song=JSON.parse(decodeURIComponent(escape(atob(DATA))));let ac,master,filter,delay,delayGain,timer,pi=0,st=0,next=0,playing=false;
+const INS={lead:{softSquare:["square",.16,.012,.08,0],brightSquare:["square",.2,.006,.05,0],pulseLead:["sawtooth",.14,.005,.04,-5],tinyBell:["triangle",.18,.004,.16,12],laserLead:["square",.18,.003,.03,-12]},bass:{triangleBass:["triangle",.25,.01,.08,0],squareBass:["square",.21,.008,.06,0],pluckBass:["triangle",.24,.003,.025,0],subBass:["sine",.28,.015,.12,0]},arp:{thinArp:["square",.09,.004,.035,0],sparkleArp:["triangle",.12,.003,.09,7],bellArp:["sine",.14,.004,.14,12]}};
+const obj=v=>v&&typeof v==="object",nv=v=>obj(v)?v.n:v,dv=v=>obj(v)?v.d:v,ln=v=>obj(v)&&Number.isFinite(v.len)?v.len:1,vl=v=>obj(v)&&Number.isFinite(v.vel)?v.vel:1,tie=v=>!!(obj(v)&&v.tie),off=v=>obj(v)&&Number.isFinite(v.off)?v.off:0;
+function f(m){return 440*Math.pow(2,(m-69)/12)}
+function cfg(ch){if(ch==="lead")return INS.lead[song.leadInstrument]||INS.lead.softSquare;if(ch==="bass")return INS.bass[song.bassInstrument]||INS.bass.triangleBass;if(ch==="arp")return INS.arp[song.arpInstrument]||INS.arp.thinArp;return ["square",.16,.01,.05,0]}
+function init(){if(ac)return;ac=new (window.AudioContext||window.webkitAudioContext)();master=ac.createGain();master.gain.value=.58;filter=ac.createBiquadFilter();filter.type="lowpass";filter.frequency.value=7200;delay=ac.createDelay(.7);delay.delayTime.value=song.mood==="space"?0.28:0.18;delayGain=ac.createGain();delayGain.gain.value=song.mood==="space"?0.24:0.14;delay.connect(delayGain);delayGain.connect(delay);delayGain.connect(filter);filter.connect(master);master.connect(ac.destination)}
+function env(t,d,p,a=.01,r=.04){const g=ac.createGain();g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(Math.max(.0002,p),t+Math.max(.002,a));g.gain.exponentialRampToValueAtTime(.0001,t+d+r);return g}
+function tone(m,ch,t,d,v){const c=cfg(ch),o=ac.createOscillator(),g=env(t,d,v*c[1],c[2],c[3]);o.type=c[0];o.frequency.setValueAtTime(f(m),t);o.detune.setValueAtTime(c[4]||0,t);if(ch==="lead"&&song.leadInstrument==="laserLead")o.frequency.exponentialRampToValueAtTime(Math.max(60,f(m)*.72),t+Math.min(.08,d));o.connect(g);g.connect(filter);if(ch==="lead"||ch==="arp")g.connect(delay);o.start(t);o.stop(t+d+.1)}
+function noise(){const b=ac.createBuffer(1,ac.sampleRate*.18,ac.sampleRate),x=b.getChannelData(0);for(let i=0;i<x.length;i++)x[i]=Math.random()*2-1;return b}
+function kick(t,v=1){const kit=song.drumKit||"classic",o=ac.createOscillator(),g=env(t,kit==="hard"?0.16:0.12,(kit==="cute"?0.72:kit==="hard"?1.08:0.9)*v,.01,.03);o.type="sine";o.frequency.setValueAtTime(kit==="cute"?120:150,t);o.frequency.exponentialRampToValueAtTime(kit==="hard"?36:42,t+.12);o.connect(g);g.connect(filter);o.start(t);o.stop(t+.16)}
+function snare(t,v=1){const kit=song.drumKit||"classic",s=ac.createBufferSource(),q=ac.createBiquadFilter(),g=env(t,kit==="hard"?0.14:0.11,(kit==="cute"?0.32:kit==="hard"?0.58:0.42)*v,.01,.03);s.buffer=noise();q.type="bandpass";q.frequency.value=kit==="noise"?2400:kit==="cute"?1350:1700;s.connect(q);q.connect(g);g.connect(filter);s.start(t);s.stop(t+.16)}
+function hat(t,v=1){const kit=song.drumKit||"classic",s=ac.createBufferSource(),q=ac.createBiquadFilter(),g=env(t,kit==="noise"?0.055:0.035,(kit==="cute"?0.12:kit==="hard"?0.24:0.18)*v,.004,.02);s.buffer=noise();q.type="highpass";q.frequency.value=kit==="noise"?4800:6200;s.connect(q);q.connect(g);g.connect(filter);s.start(t);s.stop(t+.055)}
+function step(p,s,t){const x=song.patterns[p],d=(60/song.bpm)/4;if(!x)return;const nt=(v,ch)=>{const n=nv(v);if(n==null||tie(v))return;tone(n,ch,t+off(v)*d,Math.max(.035,d*ln(v)*.88),vl(v))};nt(x.lead[s],"lead");nt(x.bass[s],"bass");nt(x.arp[s],"arp");const dr=dv(x.drum[s]),tt=t+off(x.drum[s])*d,v=vl(x.drum[s]);if(dr==="K")kick(tt,v);if(dr==="S")snare(tt,v);if(dr==="H")hat(tt,v)}
+function tick(){while(next<ac.currentTime+.12){step(pi,st,next);next+=(60/song.bpm)/4;if(++st>=16){st=0;pi=(pi+1)%song.patterns.length}}}
+async function toggle(){init();if(ac.state==="suspended")await ac.resume();if(playing){clearInterval(timer);playing=false;document.getElementById("mctPlay").textContent="♫ BGM";return}pi=0;st=0;next=ac.currentTime+.06;timer=setInterval(tick,25);playing=true;document.getElementById("mctPlay").textContent="■ BGM"}
+document.getElementById("mctPlay").onclick=toggle;
+})();
+<\/script>`;
+    }
+
+    function validatePlayerCode(code) {
+      if (!code || !code.includes("<button") || !code.includes("<script>")) throw new Error("플레이어 코드 구조가 완전하지 않습니다.");
+      const marker = 'const DATA="';
+      const start = code.indexOf(marker);
+      if (start < 0) throw new Error("플레이어 코드에서 MCT Base64 데이터를 찾지 못했습니다.");
+      const dataStart = start + marker.length;
+      const dataEnd = code.indexOf('"', dataStart);
+      if (dataEnd < 0) throw new Error("MCT Base64 데이터가 닫히지 않았습니다.");
+      const decoded = decodeMct(code.slice(dataStart, dataEnd));
+      if (!decoded || !Array.isArray(decoded.patterns) || !decoded.patterns.length) throw new Error("MCT 데이터에 패턴이 없습니다.");
+      const scriptStart = code.indexOf("<script>");
+      const scriptEnd = code.lastIndexOf("<\/script>");
+      if (scriptStart < 0 || scriptEnd < 0 || scriptEnd <= scriptStart) throw new Error("플레이어 스크립트가 완전하지 않습니다.");
+      const scriptBody = code.slice(scriptStart + 8, scriptEnd).trim();
+      try {
+        new Function(scriptBody);
+      } catch (err) {
+        console.warn("MCT player validation skipped strict syntax check", err);
+      }
+      return decoded;
+    }
+
+    function exportPlayer() {
+      const base64 = exportData();
+      const code = miniPlayerCode(base64);
+      els.playerBox.value = code;
+      try {
+        const decoded = validatePlayerCode(code);
+        setStatus(`단일 HTML 플레이어 코드 생성 및 문법 검증 완료 · ${decoded.patterns.length}개 패턴 · 본편 악기 프리셋 반영`);
+      } catch (err) {
+        setStatus(`플레이어 코드 생성 후 검증 실패: ${err.message}`, "warn");
+      }
+    }
+
+    async function safeCopy(text, textarea, successMessage) {
+      try {
+        if (!text) throw new Error("복사할 내용이 없습니다.");
+        if (navigator.clipboard && window.isSecureContext) {
+          await navigator.clipboard.writeText(text);
+          setStatus(successMessage, "ok");
+          return true;
+        }
+        throw new Error("Clipboard API unavailable");
+      } catch (err) {
+        textarea.focus();
+        textarea.select();
+        textarea.setSelectionRange(0, textarea.value.length);
+        setStatus("이 실행 환경에서 자동 복사가 차단되어 텍스트를 선택했습니다. Ctrl+C로 직접 복사하세요.", "warn");
+        return false;
+      }
+    }
+
+    function songDurationSeconds() {
+      const bpm = Math.max(55, Number(els.bpm.value) || 120);
+      return Math.max(1, song.length * 16 * ((60 / bpm) / 4));
+    }
+
+    async function downloadOgg() {
+      if (!song.length) generateSong();
+      ensureAudio();
+      if (!window.MediaRecorder || !recorderDest) {
+        setStatus("이 브라우저는 MediaRecorder 오디오 녹음을 지원하지 않습니다.", "warn");
+        return;
+      }
+      const preferred = "audio/ogg;codecs=opus";
+      const fallback = "audio/webm;codecs=opus";
+      const mimeType = MediaRecorder.isTypeSupported(preferred) ? preferred : (MediaRecorder.isTypeSupported(fallback) ? fallback : "");
+      const ext = mimeType.includes("ogg") ? "ogg" : "webm";
+      const chunks = [];
+      const recorder = new MediaRecorder(recorderDest.stream, mimeType ? { mimeType } : undefined);
+      recorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
+      recorder.onstop = () => {
+        const blob = new Blob(chunks, { type: mimeType || "audio/webm" });
+        const a = document.createElement("a");
+        const safeSeed = els.seed.value.replace(/[^a-z0-9_-]/gi, "_");
+        a.href = URL.createObjectURL(blob);
+        a.download = `${safeSeed || "song"}.${ext}`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(a.href);
+        setStatus(ext === "ogg" ? ".ogg 파일로 저장했습니다." : "이 브라우저는 .ogg 인코딩을 지원하지 않아 .webm으로 저장했습니다.", ext === "ogg" ? "ok" : "warn");
+      };
+      await play();
+      recorder.start();
+      window.setTimeout(() => {
+        recorder.stop();
+        stop(false);
+      }, Math.ceil(songDurationSeconds() * 1000) + 350);
+      setStatus("현재 곡 1회 루프를 녹음 중입니다. 녹음이 끝나면 자동 다운로드됩니다.");
+    }
+
+    function freqToMidi(freq) {
+      if (!Number.isFinite(freq) || freq <= 20) return null;
+      return Math.round(69 + 12 * Math.log2(freq / 440));
+    }
+
+    function rmsBetween(data, start, end) {
+      let sum = 0;
+      let peak = 0;
+      const s = Math.max(0, start | 0);
+      const e = Math.min(data.length, end | 0);
+      for (let i = s; i < e; i++) {
+        const v = Math.abs(data[i]);
+        sum += v * v;
+        if (v > peak) peak = v;
+      }
+      const len = Math.max(1, e - s);
+      return { rms: Math.sqrt(sum / len), peak };
+    }
+
+    function monoFromBuffer(buffer) {
+      if (buffer.numberOfChannels === 1) return buffer.getChannelData(0);
+      const length = buffer.length;
+      const mono = new Float32Array(length);
+      for (let ch = 0; ch < buffer.numberOfChannels; ch++) {
+        const data = buffer.getChannelData(ch);
+        for (let i = 0; i < length; i++) mono[i] += data[i] / buffer.numberOfChannels;
+      }
+      return mono;
+    }
+
+    const MAX_MP3_IMPORT_SECONDS = 150;
+    const MAX_MP3_IMPORT_PATTERNS = 144;
+
+    function mp3ImportPlan(durationSeconds, bpm) {
+      const analyzeSeconds = Math.min(Math.max(0, Number(durationSeconds) || 0), MAX_MP3_IMPORT_SECONDS);
+      const safeBpm = clamp(Math.round(Number(bpm) || 120), 70, 210);
+      const stepDur = (60 / safeBpm) / 4;
+      const idealPatterns = Math.max(1, Math.round(analyzeSeconds / (stepDur * 16)));
+      const patternCount = clamp(idealPatterns, 1, MAX_MP3_IMPORT_PATTERNS);
+      const totalSteps = patternCount * 16;
+      return { analyzeSeconds, bpm: safeBpm, stepDur, patternCount, totalSteps };
+    }
+
+    function estimateBpmFromBuffer(data, sampleRate, maxSeconds = MAX_MP3_IMPORT_SECONDS) {
+      const maxSamples = Math.min(data.length, Math.floor(maxSeconds * sampleRate));
+      const hop = 1024;
+      const frames = Math.max(8, Math.floor(maxSamples / hop));
+      const env = new Float32Array(frames);
+      for (let i = 0; i < frames; i++) {
+        env[i] = rmsBetween(data, i * hop, Math.min(maxSamples, (i + 1) * hop)).rms;
+      }
+      const onset = new Float32Array(frames);
+      let mean = 0;
+      for (let i = 1; i < frames; i++) {
+        onset[i] = Math.max(0, env[i] - env[i - 1]);
+        mean += onset[i];
+      }
+      mean /= Math.max(1, frames - 1);
+      for (let i = 0; i < frames; i++) onset[i] = Math.max(0, onset[i] - mean * 0.35);
+
+      let bestBpm = Number(els.bpm.value) || 120;
+      let bestScore = -Infinity;
+      for (let bpm = 70; bpm <= 210; bpm++) {
+        const lag = Math.round((sampleRate * 60) / (bpm * hop));
+        if (lag < 2 || lag >= frames / 2) continue;
+        let score = 0;
+        for (let i = lag; i < frames; i++) score += onset[i] * onset[i - lag];
+        const halfLag = Math.max(1, Math.round(lag / 2));
+        for (let i = halfLag; i < frames; i++) score += onset[i] * onset[i - halfLag] * 0.28;
+        if (score > bestScore) {
+          bestScore = score;
+          bestBpm = bpm;
+        }
+      }
+      return clamp(Math.round(bestBpm), 70, 210);
+    }
+
+    function estimatePitchAutoCorrelation(frame, sampleRate) {
+      if (!frame || frame.length < 64) return { freq: null, confidence: 0 };
+
+      // 긴 MP3를 150초까지 처리하기 위해 피치 분석 프레임을 가볍게 다운샘플링합니다.
+      const maxFrame = 1400;
+      const stride = Math.max(1, Math.floor(frame.length / maxFrame));
+      const len = Math.min(maxFrame, Math.floor(frame.length / stride));
+      if (len < 64) return { freq: null, confidence: 0 };
+
+      const samples = new Float32Array(len);
+      for (let i = 0; i < len; i++) samples[i] = frame[i * stride];
+      const effectiveRate = sampleRate / stride;
+
+      let mean = 0;
+      for (let i = 0; i < len; i++) mean += samples[i];
+      mean /= len;
+
+      let energy = 0;
+      for (let i = 0; i < len; i++) {
+        const v = samples[i] - mean;
+        energy += v * v;
+      }
+      if (energy / len < 0.00002) return { freq: null, confidence: 0 };
+
+      const minFreq = 80;
+      const maxFreq = 1800;
+      const minLag = Math.max(2, Math.floor(effectiveRate / maxFreq));
+      const maxLag = Math.min(len - 2, Math.floor(effectiveRate / minFreq));
+      const lagStep = Math.max(1, Math.floor((maxLag - minLag) / 220));
+      let bestLag = 0;
+      let best = -Infinity;
+
+      for (let lag = minLag; lag <= maxLag; lag += lagStep) {
+        const limit = len - lag;
+        const innerStep = Math.max(1, Math.floor(limit / 320));
+        let corr = 0;
+        let a = 0;
+        let b = 0;
+        for (let i = 0; i < limit; i += innerStep) {
+          const x = samples[i] - mean;
+          const y = samples[i + lag] - mean;
+          corr += x * y;
+          a += x * x;
+          b += y * y;
+        }
+        const norm = corr / Math.sqrt(Math.max(1e-12, a * b));
+        if (norm > best) {
+          best = norm;
+          bestLag = lag;
+        }
+      }
+
+      if (!bestLag || best < 0.22) return { freq: null, confidence: Math.max(0, best) };
+      return { freq: effectiveRate / bestLag, confidence: clamp(best, 0, 1) };
+    }
+
+    function quantizeMidiToPool(midi, pool) {
+      if (midi === null || midi === undefined || !pool.length) return null;
+      return pool.reduce((best, n) => Math.abs(n - midi) < Math.abs(best - midi) ? n : best, pool[0]);
+    }
+
+    function spectralBrightness(data, start, end) {
+      let diff = 0;
+      let amp = 0;
+      const s = Math.max(1, start | 0);
+      const e = Math.min(data.length, end | 0);
+      for (let i = s; i < e; i++) {
+        diff += Math.abs(data[i] - data[i - 1]);
+        amp += Math.abs(data[i]);
+      }
+      return diff / Math.max(1e-6, amp);
+    }
+
+    function classifyImportedDrum(step, rms, peak, onset, brightness) {
+      const strong = onset > 0.018 || peak > 0.32;
+      const bright = brightness > 0.72;
+      if (!strong && !(bright && rms > 0.026)) return null;
+      if (step % 4 === 0 && !bright) return "K";
+      if ((step % 8 === 4 || step % 8 === 6) && peak > 0.16) return "S";
+      if (bright || step % 2 === 0) return "H";
+      return peak > 0.26 ? "K" : null;
+    }
+
+    function inferLengthFromSustain(stepStats, index, totalSteps) {
+      const cur = stepStats[index];
+      if (!cur?.note) return 1;
+      let len = 1;
+      for (let i = index + 1; i < Math.min(totalSteps, index + 4); i++) {
+        const next = stepStats[i];
+        if (!next?.note) break;
+        const samePitch = Math.abs(next.note - cur.note) <= 1;
+        const sustained = next.rms > cur.rms * 0.45 && next.onset < cur.rms * 0.38;
+        if (samePitch && sustained) len++;
+        else break;
+      }
+      return clamp(len, 1, 4);
+    }
+
+    function bindMp3FollowupButtons() {
+      els.mp3LockRecommended = document.getElementById("mp3LockRecommended");
+      els.mp3FixRecommended = document.getElementById("mp3FixRecommended");
+      els.mp3LoopFix = document.getElementById("mp3LoopFix");
+      if (els.mp3LockRecommended) els.mp3LockRecommended.onclick = applyReviewRecommendedLocks;
+      if (els.mp3FixRecommended) els.mp3FixRecommended.onclick = fixReviewRecommendedTarget;
+      if (els.mp3LoopFix) els.mp3LoopFix.onclick = improveLoopEnding;
+    }
+
+    function renderMp3Report(report) {
+      if (!els.mp3Report || !report) return;
+      const pitchText = report.pitch === "--" ? "--" : `${report.pitch}%`;
+      const drumText = report.drum === "--" ? "--" : `${report.drum}%`;
+      const loopText = report.loop === "--" ? "--" : `${report.loop}%`;
+      els.mp3Report.innerHTML = `
+        <b>MP3 Analysis Report</b><br />
+        변환 적합도: ${report.fitLabel} · 추천: ${report.recommendation}
+        <div class="mp3-report-grid">
+          <div>BPM<span>${report.bpm}</span></div>
+          <div>Pitch<span>${pitchText}</span></div>
+          <div>Drum<span>${drumText}</span></div>
+          <div>Loop<span>${loopText}</span></div>
+        </div>
+        <div class="mp3-followups">
+          <button id="mp3LockRecommended" class="secondary">추천 잠금</button>
+          <button id="mp3FixRecommended" class="secondary">추천 보정</button>
+          <button id="mp3LoopFix" class="secondary">루프 끝 보정</button>
+        </div>
+      `;
+      bindMp3FollowupButtons();
+    }
+
+    function estimateFreqZeroCrossing(data, sampleRate) {
+      const pitch = estimatePitchAutoCorrelation(data, sampleRate);
+      return pitch.freq;
+    }
+
+    async function analyzeMp3ToMct() {
+      const file = els.mp3File.files?.[0];
+      if (!file) {
+        setStatus("변환할 MP3 파일을 먼저 선택하세요.", "warn");
+        return;
+      }
+
+      pushHistory("MP3 근사 변환 전");
+      ensureAudio();
+
+      let buffer;
+      try {
+        buffer = await audioCtx.decodeAudioData(await file.arrayBuffer());
+      } catch (err) {
+        setStatus("MP3를 읽지 못했습니다. 브라우저가 해당 파일 코덱을 지원하는지 확인하세요.", "warn");
+        return;
+      }
+
+      const data = monoFromBuffer(buffer);
+      const sampleRate = buffer.sampleRate;
+      const analyzeSecondsForBpm = Math.min(buffer.duration, MAX_MP3_IMPORT_SECONDS);
+      setStatus(`MP3 분석 준비 중 · 최대 ${Math.round(analyzeSecondsForBpm)}초까지 분석합니다.`, "warn");
+      await new Promise(resolve => requestAnimationFrame(resolve));
+
+      const estimatedBpm = estimateBpmFromBuffer(data, sampleRate, analyzeSecondsForBpm);
+      const plan = mp3ImportPlan(buffer.duration, estimatedBpm);
+      els.bpm.value = plan.bpm;
+
+      const analyzeSeconds = plan.analyzeSeconds;
+      const stepDur = plan.stepDur;
+      const patternCount = plan.patternCount;
+      const totalSteps = plan.totalSteps;
+      const stepSamples = Math.max(128, Math.floor(stepDur * sampleRate));
+      const usableSamples = Math.min(data.length, totalSteps * stepSamples);
+
+      const leadPool = notePool("lead");
+      const bassPool = notePool("bass");
+      const arpPool = notePool("arp");
+      const scale = SCALES[els.scale.value];
+      const base = rootMidi();
+      const roles = STRUCTURES[els.songStructure.value] || STRUCTURES.aaba;
+      const patterns = Array.from({ length: patternCount }, (_, i) => ({
+        id: i + 1,
+        role: roles[i % roles.length] || "Imported",
+        seed: hashString(`${file.name}|${i}`),
+        lead: Array(16).fill(null),
+        bass: Array(16).fill(null),
+        arp: Array(16).fill(null),
+        drum: Array(16).fill(null)
+      }));
+
+      const global = rmsBetween(data, 0, usableSamples);
+      const energyThreshold = Math.max(0.012, global.rms * 0.42);
+      const stepStats = [];
+      let prevRms = global.rms || 0.001;
+      let pitchConfidenceSum = 0;
+      let pitchCount = 0;
+      let drumHitCount = 0;
+
+      for (let globalStep = 0; globalStep < totalSteps; globalStep++) {
+        const start = globalStep * stepSamples;
+        const end = Math.min(data.length, start + stepSamples);
+        if (end <= start) break;
+        const stats = rmsBetween(data, start, end);
+        const onset = Math.max(0, stats.rms - prevRms);
+        const brightness = spectralBrightness(data, start, end);
+        const centerStart = start + Math.floor(stepSamples * 0.12);
+        const centerEnd = Math.min(end, start + Math.floor(stepSamples * 0.92));
+        const frame = data.subarray(centerStart, centerEnd);
+        const shouldAnalyzePitch = stats.rms > energyThreshold * 0.55 || stats.peak > Math.max(0.035, global.peak * 0.12);
+        const pitch = shouldAnalyzePitch ? estimatePitchAutoCorrelation(frame, sampleRate) : { freq: null, confidence: 0 };
+        const rawMidi = pitch.freq ? freqToMidi(pitch.freq) : null;
+        const note = pitch.confidence > 0.25 ? quantizeMidiToPool(rawMidi, leadPool) : null;
+        if (pitch.confidence > 0.25) { pitchConfidenceSum += pitch.confidence; pitchCount++; }
+        stepStats.push({ rms: stats.rms, peak: stats.peak, onset, brightness, pitch, rawMidi, note });
+        prevRms = Math.max(0.001, stats.rms);
+        if (globalStep > 0 && globalStep % 256 === 0) await new Promise(resolve => setTimeout(resolve, 0));
+      }
+      for (let globalStep = 0; globalStep < stepStats.length; globalStep++) {
+        const pIndex = Math.floor(globalStep / 16);
+        const step = globalStep % 16;
+        const pattern = patterns[pIndex];
+        const st = stepStats[globalStep];
+        if (!pattern || !st) continue;
+
+        const velocity = clamp((st.rms / Math.max(0.012, global.rms * 1.35)) * 0.78 + st.onset * 8, 0.38, 1.25);
+        const confidentPitch = st.note !== null && st.rms > energyThreshold;
+
+        if (confidentPitch) {
+          const len = inferLengthFromSustain(stepStats, globalStep, stepStats.length);
+          pattern.lead[step] = makeNote(st.note, len, velocity, false, 0);
+
+          if (step % 2 === 0 && st.rms > energyThreshold * 0.9) {
+            const arpNote = quantizeMidiToPool(st.note + 12, arpPool) || st.note + 12;
+            pattern.arp[step] = makeNote(arpNote, 0.75, clamp(velocity * 0.62, 0.35, 0.9), false, 0);
+          }
+        }
+
+        if (step % 4 === 0 || (step % 8 === 6 && st.rms > energyThreshold * 1.1)) {
+          let bassGuess = null;
+          if (st.rawMidi !== null) bassGuess = quantizeMidiToPool(st.rawMidi - 24, bassPool);
+          if (bassGuess === null) bassGuess = noteFromDegree(base - 12, scale, 0, -1);
+          pattern.bass[step] = makeNote(bassGuess, step % 4 === 0 ? 2 : 1, clamp(velocity * 0.78, 0.45, 1.05), false, 0);
+        }
+
+        const drum = classifyImportedDrum(step, st.rms, st.peak, st.onset, st.brightness);
+        if (drum) {
+          pattern.drum[step] = makeDrum(drum, clamp(velocity, 0.45, 1.2), 0);
+          drumHitCount++;
+        }
+      }
+
+      patterns.forEach(pattern => {
+        ["lead", "bass", "arp"].forEach(channel => normalizeTies(pattern, channel));
+        if (!pattern.drum.some(drumValue)) {
+          pattern.drum[0] = makeDrum("K", 0.9);
+          pattern.drum[4] = makeDrum("S", 0.75);
+          pattern.drum[8] = makeDrum("K", 0.85);
+          pattern.drum[12] = makeDrum("S", 0.75);
+        }
+      });
+
+      motifContext = {
+        seed: hashString(`${file.name}|imported-motif`),
+        rhythm: Array.from({ length: 8 }, (_, i) => patterns[0]?.lead[i] !== null),
+        degrees: Array.from({ length: 8 }, (_, i) => {
+          const n = noteValue(patterns[0]?.lead[i]);
+          return n === null || n === undefined ? null : Math.round((n - rootMidi()) / 2);
+        })
+      };
+      song = patterns;
+      currentPatternIndex = 0;
+      currentStep = 0;
+      selectedPoint = { pattern: 0, step: 0, channel: "all" };
+      render();
+      const score = scoreCurrentSong();
+      const pitchPercent = Math.round((pitchConfidenceSum / Math.max(1, pitchCount)) * 100);
+      const drumPercent = Math.round(clamp(drumHitCount / Math.max(1, totalSteps * 0.38), 0, 1) * 100);
+      const loopPercent = score.loop;
+      const fit = Math.round(pitchPercent * 0.42 + drumPercent * 0.28 + loopPercent * 0.3);
+      renderMp3Report({
+        bpm: estimatedBpm,
+        pitch: pitchPercent,
+        drum: drumPercent,
+        loop: loopPercent,
+        fitLabel: fit >= 75 ? "좋음" : fit >= 55 ? "보통" : "낮음",
+        recommendation: fit >= 70 ? "Lead나 Drum을 잠그고 나머지를 다듬어보세요." : "Root/Scale을 바꾸거나 20 Takes로 보정 후보를 다시 찾는 것이 좋습니다."
+      });
+      setStatus(`MP3 → MCT 근사 변환 완료 · 분석 ${Math.round(analyzeSeconds)}초 / BPM ${estimatedBpm} · ${patternCount}개 패턴 · 총점 ${score.total}점. 분석 리포트를 확인하세요.`, "warn");
+    }
+
+    function randomSeed() {
+      const words = ["PIXEL", "HANLA", "ORBIT", "BUBBLE", "NEON", "LAVA", "DRAGON", "ROBOT", "STAR", "RIVER", "RUN", "LAB"];
+      els.seed.value = `${choice(Math.random, words)}-${Math.floor(Math.random() * 999999).toString().padStart(6, "0")}`;
+    }
+
+    els.applyMood.onclick = () => applyMood(true);
+    els.undoBtn.onclick = undo;
+    els.redoBtn.onclick = redo;
+    els.saveCheckpoint.onclick = saveCheckpoint;
+    els.lockTiles.forEach(tile => {
+      tile.onclick = () => toggleLock(tile.dataset.lock);
+    });
+    els.rerollUnlocked.onclick = regenerateUnlocked;
+    els.fixWeakest.onclick = fixWeakestPart;
+    els.applyReviewLocks.onclick = applyReviewRecommendedLocks;
+    els.fixReviewTarget.onclick = fixReviewRecommendedTarget;
+    els.fixLoopEnding.onclick = improveLoopEnding;
+    els.captureA.onclick = () => captureCompareSlot("a");
+    els.captureB.onclick = () => captureCompareSlot("b");
+    els.playA.onclick = () => playCompareSlot("a");
+    els.playB.onclick = () => playCompareSlot("b");
+    els.chooseA.onclick = () => chooseCompareSlot("a");
+    els.chooseB.onclick = () => chooseCompareSlot("b");
+    els.saveFavorite.onclick = saveCurrentFavorite;
+    els.favoriteToB.onclick = latestFavoriteToB;
+    els.clearCompare.onclick = clearCompareSlots;
+    els.lockMelodyPreset.onclick = lockMelodyPreset;
+    els.unlockAll.onclick = unlockAllChannels;
+    els.directorButtons.cute.onclick = () => directorAction("cute");
+    els.directorButtons.lessNoisy.onclick = () => directorAction("lessNoisy");
+    els.directorButtons.melody.onclick = () => directorAction("melody");
+    els.directorButtons.drumsDown.onclick = () => directorAction("drumsDown");
+    els.directorButtons.build.onclick = () => directorAction("build");
+    els.directorButtons.smoothLoop.onclick = () => directorAction("smoothLoop");
+    els.pointTarget.onchange = () => setSelectedPoint(selectedPoint.pattern, selectedPoint.step, els.pointTarget.value);
+    els.boostPoint.onclick = () => adjustPoint(0.22);
+    els.softenPoint.onclick = () => adjustPoint(-0.22);
+    els.boostPattern.onclick = () => adjustPatternEnergy(0.22);
+    els.softenPattern.onclick = () => adjustPatternEnergy(-0.22);
+    function applyUiMode() {
+      document.body.classList.toggle("basic-ui", els.uiMode.value === "basic");
+      document.body.classList.toggle("studio-ui", els.uiMode.value === "studio");
+      if (els.uiMode.value === "basic") setWorkflowStage("find");
+      updateStudioInfo();
+    }
+
+    els.workflowTabs.forEach(btn => btn.onclick = () => setWorkflowStage(btn.dataset.stage));
+    els.basicFind.onclick = () => { setWorkflowStage("find"); quickFindBestLoop(); };
+    els.basicPlay.onclick = play;
+    els.basicFavorite.onclick = saveCurrentFavorite;
+    els.basicFix.onclick = () => { setWorkflowStage("fix"); fixReviewRecommendedTarget(); };
+    els.basicCute.onclick = () => directorAction("cute");
+    els.basicExport.onclick = () => { setWorkflowStage("finish"); exportPlayer(); };
+    els.uiMode.onchange = applyUiMode;
+    els.editMode.onchange = () => { updateStudioInfo(); render(); };
+    els.leadInstrument.onchange = updateStudioInfo;
+    els.bassInstrument.onchange = updateStudioInfo;
+    els.arpInstrument.onchange = updateStudioInfo;
+    els.drumKit.onchange = updateStudioInfo;
+    els.lengthPreset.onchange = updateStudioInfo;
+    els.velocityPreset.onchange = updateStudioInfo;
+    els.songStructure.onchange = updateStudioInfo;
+    els.mood.onchange = () => applyMood(true);
+    els.generate.onclick = generateSong;
+    els.generateTakes.onclick = generateBestTakes;
+    els.scoreCurrent.onclick = scoreCurrentSong;
+    els.append.onclick = appendPattern;
+    els.duplicate.onclick = duplicatePattern;
+    els.play.onclick = play;
+    els.stop.onclick = () => stop(true);
+    els.randomSeed.onclick = () => { pushHistory("시드 랜덤 전"); randomSeed(); generateSong(false); };
+    els.exportJson.onclick = exportData;
+    els.downloadMct.onclick = downloadMct;
+    els.downloadOgg.onclick = downloadOgg;
+    els.copyExport.onclick = async () => {
+      if (!els.exportBox.value) exportData();
+      await safeCopy(els.exportBox.value, els.exportBox, "MCT Base64 데이터를 클립보드에 복사했습니다.");
+    };
+    els.exportPlayer.onclick = exportPlayer;
+    els.copyPlayer.onclick = async () => {
+      if (!els.playerBox.value) exportPlayer();
+      try {
+        validatePlayerCode(els.playerBox.value);
+      } catch (err) {
+        setStatus(`복사 전 플레이어 코드 검증 실패: ${err.message}`, "warn");
+        els.playerBox.focus();
+        return;
+      }
+      await safeCopy(els.playerBox.value, els.playerBox, "플레이어 코드 검증 후 클립보드에 복사했습니다.");
+    };
+    els.loadMct.onclick = loadMct;
+    els.analyzeMp3.onclick = analyzeMp3ToMct;
+    bindMp3FollowupButtons();
+
+    function runSelfTests() {
+      const results = [];
+      const assert = (name, condition) => results.push(`${condition ? "PASS" : "FAIL"}: ${name}`);
+      const sample = { format: "MCT-TEST", bpm: 120, patterns: [{ lead: [60], bass: [], arp: [], drum: [] }] };
+      const encoded = encodeMct(sample);
+      assert("MCT encode/decode roundtrip", decodeMct(encoded).format === "MCT-TEST");
+      assert("Export format is MCT-0.6", exportObject().format === "MCT-0.6");
+      try {
+        assert("Mini player code validates", !!validatePlayerCode(miniPlayerCode(encodeMct(exportObject()))).patterns);
+      } catch (err) {
+        assert("Mini player code validates", false);
+        console.warn("Mini player self-test skipped", err);
+      }
+      assert("Euclidean rhythm length", euclid(16, 5).length === 16);
+      assert("Frequency to MIDI A4", freqToMidi(440) === 69);
+      const sineA4 = Float32Array.from({ length: 4096 }, (_, i) => Math.sin((2 * Math.PI * 440 * i) / 44100));
+      const detectedA4 = estimatePitchAutoCorrelation(sineA4, 44100);
+      assert("Autocorrelation detects A4", detectedA4.freq && Math.abs(detectedA4.freq - 440) < 25);
+      assert("Quantize MIDI to pool", quantizeMidiToPool(61, [60, 64, 67]) === 60);
+      assert("Song duration positive", songDurationSeconds() > 0);
+      assert("Structure role count positive", getStructureRoles().length > 0);
+      const testMotif = createMotifContext();
+      assert("Motif has 8 degrees", testMotif.degrees.length === 8);
+      assert("Motif has 8 rhythm slots", testMotif.rhythm.length === 8);
+      const ev = makeNote(60, 2, 0.9, false, 0.1);
+      assert("Event note value", noteValue(ev) === 60);
+      assert("Event length value", eventLen(ev) === 2);
+      assert("Velocity clamp realistic", velocityFor("lead", "A", 0, mulberry32(1)) > 0);
+      const testScore = scoreCandidate([{ lead: [makeNote(60), null, makeNote(64), null], bass: [makeNote(48)], arp: [makeNote(72)], drum: [makeDrum("K"), null, makeDrum("H"), null] }]);
+      assert("Score candidate total range", testScore.total >= 0 && testScore.total <= 100);
+      const review = compositionReview([{ lead: [makeNote(60), null, makeNote(64), null], bass: [makeNote(48)], arp: [makeNote(72)], drum: [makeDrum("K"), null, makeDrum("H"), null] }], testScore);
+      assert("Review returns summary", typeof review.summary === "string" && review.summary.length > 0);
+      assert("Review recommended locks array", Array.isArray(review.recommendedLocks));
+      const savedFavorites = cloneMaybe(favorites);
+      const savedCompareSlots = cloneMaybe(compareSlots);
+      const favBefore = favorites.length;
+      favoriteSnapshot(captureState("test favorite"), "test favorite");
+      assert("Favorite can be stored", favorites.length === favBefore + 1);
+      compareSlots.a = captureState("test A");
+      assert("Compare A can be captured", !!compareSlots.a?.patterns);
+      favorites = savedFavorites || [];
+      compareSlots = savedCompareSlots || { a: null, b: null };
+      renderFavorites();
+      updateCompareUi();
+      assert("Instrument config returns wave", !!instrumentConfig("lead").wave);
+      const beforeMode = els.editMode.value;
+      els.editMode.value = "select";
+      assert("Safe edit mode selectable", els.editMode.value === "select");
+      els.editMode.value = beforeMode;
+      const snap = captureState("test snapshot");
+      assert("History snapshot has controls", !!snap.controls && typeof snap.controls === "object");
+      assert("Point target channels list", targetChannels().length >= 1);
+      assert("Adjust event creates boosted note", !!adjustEvent(null, "lead", 0.2, { lead: [], bass: [], arp: [], drum: [] }, 0));
+      const previousLocks = cloneMaybe(locks);
+      locks = { lead: true, bass: false, arp: false, drum: false };
+      const previousFixTarget = els.fixTarget.value;
+      els.fixTarget.value = "unlocked";
+      assert("Fix channels exclude locked lead", !fixChannels().includes("lead"));
+      assert("Fix channels include unlocked drum", fixChannels().includes("drum"));
+      els.fixTarget.value = previousFixTarget;
+      assert("RMS helper returns peak", rmsBetween(Float32Array.from([0, -0.5, 0.25]), 0, 3).peak === 0.5);
+      assert("MP3 import seconds expanded", MAX_MP3_IMPORT_SECONDS === 150);
+      assert("MP3 import pattern cap expanded", MAX_MP3_IMPORT_PATTERNS >= 128);
+      const plan150 = mp3ImportPlan(150, 142);
+      assert("MP3 150s plan uses full 150 seconds", Math.round(plan150.analyzeSeconds) === 150);
+      assert("MP3 150s plan stays within pattern cap", plan150.patternCount <= MAX_MP3_IMPORT_PATTERNS);
+      assert("MP3 150s plan has usable steps", plan150.totalSteps > 1000);
+      const prevStage = currentStage;
+      setWorkflowStage("find");
+      assert("Workflow stage can switch", document.body.classList.contains("stage-find"));
+      setWorkflowStage(prevStage || "all");
+      locks = previousLocks || { lead: false, bass: false, arp: false, drum: false };
+      const failed = results.filter(line => line.startsWith("FAIL"));
+      console.info("MCT self tests", results);
+      if (failed.length) console.warn("MCT self test failures", failed);
+      return { results, failed };
+    }
+
+    setWorkflowStage("all");
+    applyUiMode();
+    applyMood(false);
+    generateSong(false);
+    updateHistoryInfo();
+    updatePointInfo();
+    updateCompareUi();
+    renderFavorites();
+    runSelfTests();
+  </script>
+</body>
+</html>
